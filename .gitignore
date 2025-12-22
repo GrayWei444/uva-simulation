@@ -1,0 +1,35 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# PDF 論文 (檔案太大)
+*.pdf
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+nul
+*.tmp
+*.temp
+
+# Claude local settings (不上傳)
+.claude/settings.local.json
+
+# Output images (可選擇性上傳)
+# *.png
+# *.tif
