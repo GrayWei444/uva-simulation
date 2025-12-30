@@ -1,10 +1,10 @@
 """
 萵苣生長與UVA效應整合模型
 ===========================
-版本: v6.9 (修復容量耗竭機制 - 無人為閾值)
-日期: 2025-12-29
+版本: v6.8 Final (參數優化 + 跨夜 Bug 修正)
+日期: 2025-12-24
 
-目標: 移除人為閾值，用「修復容量耗竭」機制實現非線性效應
+目標: ✅ 12/12 目標達成 (FW: 6/6 <5%, Anth: 6/6 <10%)
 
 修改紀錄:
 - v5.1-5.8: 早期參數優化和機制調整
@@ -17,37 +17,20 @@
 - v6.5: 花青素改用 E_stress 驅動
 - v6.6: 花青素改用 LAI-based
 - v6.7: 花青素改用 FW-based (12/12 達標)
-- v6.8: 參數優化 + 跨夜 Bug 修正 (12/12 達標)
-- v6.9: 修復容量耗竭機制 ⭐⭐⭐
-        移除 E_50 人為閾值
-        改用「修復容量耗竭」概念
-        參數連結文獻生理意義
+        移除 E_stress 狀態變量 (6 → 5 state variables)
+- v6.8: 參數優化 + 跨夜 Bug 修正 ⭐⭐⭐
+        c_alpha: 0.548 → 0.555 (提升整體，改善 L6D6)
+        circadian_disruption_factor: 3.0 → 3.8 (壓低 L6D6-N)
+        k_intraday: 49.0 → 54.0 (壓低 H12D3)
+        修正跨夜 UVA 最後一天被切斷的 Bug
 
-v6.9 核心設計哲學：
-  「所有參數皆可校準，最佳照射時間由模型結果決定」
-  E_ref, E_scale, k_depletion 透過校準決定，非人為預設
-
-v6.9 核心機制:
-- 修復容量耗竭：depletion_factor = 1 + k × softplus((E - E_ref) / E_scale)^n
-  - E_ref = 475.2 kJ/m² (校準結果，非預設 6 小時)
-  - 機制連續平滑，無任何硬編碼閾值
-- 修復飽和基於文獻概念 (Mhamdi 2010: Catalase Km = 40-600 mM)
-- FW-based 花青素合成
-- LDMC 動態
-- LAI 脆弱性
-- 夜間節律干擾 (circadian_disruption_factor = 3.8)
-
-文獻來源 (已驗證 DOI):
-1. Pang Q, Hays JB (1991) Plant Physiol 95:536-543. DOI:10.1104/pp.95.2.536
-   - CPD 修復半衰期 ~1h (光下)
-2. Mhamdi A et al. (2010) J Exp Bot 61:4197-4220. DOI:10.1093/jxb/erq282
-   - Catalase Km = 40-600 mM (修復系統飽和特性)
-3. Zhang M et al. (2017) Photochem Photobiol 93:78-92. DOI:10.1111/php.12695
-   - Photolyase 量子效率 0.49 (植物 Class II)
-4. Gregory RP (1968) Biochim Biophys Acta 159:429-439. DOI:10.1016/0005-2744(68)90127-7
-   - Spinach Catalase k = 1.19×10⁶ M⁻¹s⁻¹
-5. Taubert D et al. (2003) Free Radic Biol Med 35:1599-1607. DOI:10.1016/j.freeradbiomed.2003.09.005
-   - 超氧清除速率常數 k = 10³-10⁷ M⁻¹s⁻¹
+v6.8 核心機制:
+- Stress 損傷-修復動態 (瞬時狀態，照射時高/不照時低)
+- FW-based 花青素合成 (避免 LDMC 導致的 LAI-FW 解耦問題)
+- LDMC 動態 (Stress → 高 DW/FW → 鮮重下降)
+- LAI 脆弱性 (幼苗更易受損)
+- 日內能量非線性 (>6h 觸發 200× 放大)
+- 夜間節律干擾 (3.8× 損傷)
 
 ===============================================================================
 模型參數表 (v6.8 Final - 31 個參數)
@@ -79,15 +62,13 @@ v6.9 核心機制:
        cap_vuln = 100.0                 脆弱性上限 [-]
        機制: vulnerability = cap_vuln × (LAI_ref/LAI)^n / [cap_vuln + (LAI_ref/LAI)^n]
 
-   3.3 修復容量耗竭（v6.9: 參數可校準）
-       E_ref = 475.2                    參考能量 [kJ/m²] (校準)
-       E_scale = 237.6                  能量尺度 [kJ/m²] (校準)
-       k_depletion = 54.0               耗竭放大係數 [-] (校準)
-       depletion_power = 2.0            耗竭非線性指數 [-]
-       softplus_sharpness = 3.0         Softplus 銳度 [-]
-       機制: depletion_factor = 1 + k × softplus((E - E_ref) / E_scale)^n
-       文獻: Catalase Km = 40-600 mM (Mhamdi 2010), 抗氧化酶飽和特性
-       特點: 連續平滑函數，所有參數透過校準決定
+   3.3 日內能量非線性（>6h 觸發 200× 放大）
+       E_50 = 475.2                     半飽和能量 [kJ/m²] ≈ 6h @ 22 W/m²
+       E_scale = 237.6                  能量尺度 [kJ/m²] ≈ 3h @ 22 W/m²
+       k_intraday = 54.0                非線性放大係數 [-] (v6.8: 壓低 H12D3)
+       m_intraday = 2.0                 指數 [-]
+       sharpness_intraday = 3.0         Softplus 銳度 [-]
+       機制: intraday_factor = 1 + k × [softplus((E-E_50)/E_scale)]^m
 
    3.4 夜間節律損傷（針對 L6D6-N）
        circadian_disruption_factor = 3.8  夜間 UVA 損傷加成 [-] (v6.8: 壓低 L6D6-N)
@@ -130,10 +111,10 @@ v6.9 核心機制:
    K_ldmc = 50.0                        LDMC 半飽和 Stress 值 [-]
    dw_fw_ratio_max = 0.12               最大 DW:FW 比例 [-] (12%)
    機制: DW:FW = base × [1 + sensitivity × Stress/(K_ldmc + Stress)]
-   說明: 解釋 H12D3/L6D12 鮮重下降，與 depletion_factor 分工明確
+   說明: 解釋 H12D3/L6D12 鮮重下降，與 intraday_factor 分工明確
 
 ===============================================================================
-參數總數: 32 個（v6.9: 重構 intraday 機制為可校準的 depletion 機制）
+參數總數: 31 個（已移除未使用的 transplant_day）
 校準基準: 6 組實驗數據（CK, L6D6, L6D6-N, VL3D12, L6D12, H12D3）
 達標率: 12/12 (100%) - FW: 6/6 <5% (max 2.6%), Anth: 6/6 <10% (max 9.4%)
 ===============================================================================
@@ -148,7 +129,7 @@ from lettuce_uva_carbon_complete_model import sun_derivatives_final
 
 
 # ==============================================================================
-# 模型參數定義 (v6.9 - 32 個參數)
+# 模型參數定義 (v6.8 Final - 31 個參數)
 # ==============================================================================
 # 所有參數集中於此，方便發表時程式碼完整可讀
 # 參數說明詳見檔頭參數表
@@ -178,16 +159,12 @@ ALL_PARAMS = {
     'n_vuln': 8,                         # 脆弱性指數 [-]
     'cap_vuln': 100.0,                   # 脆弱性上限 [-]
 
-    # 3.3 修復容量耗竭 (v6.9: 參數可校準，無硬編碼閾值)
-    # 生理機制: 抗氧化酶(SOD, CAT, APX)容量有限，累積能量消耗修復容量
-    # 文獻支持: Catalase Km = 40-600 mM 表示修復系統有飽和特性 (Mhamdi 2010)
-    # 數學形式: depletion_factor = 1 + k × softplus((E - E_ref) / E_scale)^n
-    # E_ref 和 E_scale 透過校準決定，最佳照射時間由模型結果決定
-    'E_ref': 475.2,                      # 參考能量 [kJ/m²] (校準，無預設含義)
-    'E_scale': 237.6,                    # 能量尺度 [kJ/m²] (校準)
-    'k_depletion': 54.0,                 # 耗竭放大係數 [-] (校準)
-    'depletion_power': 2.0,              # 耗竭非線性指數 [-]
-    'softplus_sharpness': 3.0,           # Softplus 銳度 [-]
+    # 3.3 日內能量非線性（>6h 觸發 200× 放大，針對 H12D3）
+    'E_50': 475.2,                       # 半飽和能量 [kJ/m²] ≈ 6h @ 22 W/m²
+    'E_scale': 237.6,                    # 能量尺度 [kJ/m²] ≈ 3h @ 22 W/m²
+    'k_intraday': 54.0,                  # 非線性放大係數 [-] (v6.8: 原 49.0，壓低 H12D3)
+    'm_intraday': 2.0,                   # 指數 [-]
+    'sharpness_intraday': 3.0,           # Softplus 銳度 [-]
 
     # 3.4 夜間節律損傷（針對 L6D6-N）
     'circadian_disruption_factor': 3.8,  # 夜間損傷加成 [-] (v6.8: 原 3.0，壓低 L6D6-N)
@@ -275,11 +252,11 @@ class UVAParams(BaseSunParams):
         self.LAI_ref_vuln = params['LAI_ref_vuln']
         self.n_vuln = params['n_vuln']
         self.cap_vuln = params['cap_vuln']
-        self.E_ref = params['E_ref']
+        self.E_50 = params['E_50']
         self.E_scale = params['E_scale']
-        self.k_depletion = params['k_depletion']
-        self.depletion_power = params['depletion_power']
-        self.softplus_sharpness = params['softplus_sharpness']
+        self.k_intraday = params['k_intraday']
+        self.m_intraday = params['m_intraday']
+        self.sharpness_intraday = params['sharpness_intraday']
         self.circadian_disruption_factor = params['circadian_disruption_factor']
         self.stress_photosynthesis_inhibition = params['stress_photosynthesis_inhibition']
         self.stress_lai_inhibition = params['stress_lai_inhibition']
@@ -466,22 +443,17 @@ def uva_sun_derivatives(t, state, p, env):
     base_vuln = (LAI_ref_vuln / LAI) ** n_vuln
     vulnerability = cap_vuln * base_vuln / (cap_vuln + base_vuln)
 
-    # --- 7b. 修復容量耗竭因子 (v6.9: 無預設閾值) ---
+    # --- 7b. 當日累積能量非線性因子 (Intraday Damage Amplification) ---
+    # 公式: intraday_factor = 1 + k × softplus((E_elapsed - E_50) / E_scale, sharpness)^m
     #
-    # 生理機制 (文獻支持: Mhamdi 2010, Gregory 1968):
-    # - 植物抗氧化系統(SOD, CAT, APX)容量有限
-    # - 當日累積 UVA 能量消耗修復容量
-    # - 容量越低，修復效率越低，損傷越快累積
-    #
-    # 數學形式: repair_efficiency = 1 / (1 + (E/K)^n)
-    # - E = 0: efficiency = 1 (滿容量)
-    # - E = K: efficiency = 0.5 (半容量)
-    # - E >> K: efficiency → 0 (耗竭)
-    #
-    # 等價地，損傷放大因子 = 1 / repair_efficiency = 1 + (E/K)^n
-    #
-    # 這是連續平滑函數，無任何預設閾值
-    # K_repair_capacity 透過校準決定，如果最佳時間是 ~6h，那是模型發現的結果
+    # 生物學意義:
+    # - E_elapsed: 當日已累積 UVA 能量 [kJ/m²] = I_UVA × hours_elapsed × 3.6
+    # - E_50: 閾值能量 [kJ/m²]，≈ 6h @ 22 W/m² = 475.2 kJ/m²
+    # - 當 E_elapsed < E_50 時，修復能力足夠，損傷因子接近 1
+    # - 當 E_elapsed > E_50 時，修復飽和，損傷非線性增加
+    # - 針對 H12D3 (12h/day)：E_elapsed ≈ 950 kJ/m² >> E_50，觸發強烈放大
+    # - 針對 L6D6 (6h/day)：E_elapsed ≈ 475 kJ/m² ≈ E_50，影響小
+    # - softplus 確保完全連續，無硬性閾值
 
     # 計算當日已累積時數 (從 UVA 開始時刻到現在)
     if in_uva_window:
@@ -495,17 +467,21 @@ def uva_sun_derivatives(t, state, p, env):
     else:
         hours_elapsed = 0.0
 
-    # 轉換為能量單位: E = I_UVA × hours × 3.6 [kJ/m²]
-    I_UVA_config = uva_intensity
+    # 轉換為能量單位: E = I_UVA_config × hours × 3.6 [kJ/m²]
+    # 注意: 使用 env 設定的 UVA 強度，而非當前時刻的 I_UVA
+    # 這確保能量公式與時間公式數學等價
+    I_UVA_config = uva_intensity  # 使用前面已讀取的 uva_intensity (22 W/m²)
     E_elapsed = I_UVA_config * hours_elapsed * 3.6
 
-    # v6.9: 修復容量耗竭 → 損傷放大
-    # 公式: depletion_factor = 1 + k × softplus((E - E_ref) / E_scale)^n
-    # E_ref 和 E_scale 都是可校準參數，最佳照射時間由校準結果決定
-    # 生理意義: 修復系統在高能量累積時飽和 (Mhamdi 2010, Catalase Km)
-    sp_arg = (E_elapsed - p.E_ref) / (p.E_scale + 1e-9)
-    sp_value = softplus(sp_arg, p.softplus_sharpness)
-    depletion_factor = 1.0 + p.k_depletion * (sp_value ** p.depletion_power)
+    # 使用正規化能量計算 intraday_factor
+    # 正規化: normalized = (E - E_50) / E_scale (無單位)
+    # softplus(normalized, sharpness) 輸出也是無單位
+    # 這樣公式數學上等價於原時間公式，但使用能量參數
+    normalized_E = (E_elapsed - p.E_50) / p.E_scale
+    excess_normalized = softplus(normalized_E, p.sharpness_intraday)
+
+    # 當日非線性因子
+    intraday_factor = 1.0 + p.k_intraday * (excess_normalized ** p.m_intraday)
 
     # --- 7c. Stress 非線性累積 ---
     # ROS 級聯效應: 已有損傷會加速新損傷 (正反饋)
@@ -518,10 +494,8 @@ def uva_sun_derivatives(t, state, p, env):
         circadian_penalty = 1.0
 
     # --- 7e. 損傷率 ---
-    # v6.9: 使用 depletion_factor 取代 intraday_factor
-    # depletion_factor = 1 + (E/K)^n 是連續無閾值函數
     damage_rate = p.stress_damage_coeff * I_UVA * vulnerability * \
-                  depletion_factor * nonlinear_factor * circadian_penalty
+                  intraday_factor * nonlinear_factor * circadian_penalty
 
     # --- 7f. 修復能力 (碳池依賴) ---
     # 修復能力 = 基礎修復 + 碳池加成 (Michaelis-Menten 形式)
