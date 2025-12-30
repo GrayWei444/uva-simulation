@@ -326,7 +326,11 @@ Stress是本模型的核心狀態變量，統一描述UVA造成的氧化脅迫�
 
     damage_rate = k_damage × I_UVA × vulnerability × intraday_factor × nonlinear_factor × circadian_penalty
 
-各因子說明：
+其中：
+- k_damage = 0.66×10⁻⁶：基礎損傷係數 [1/(W/m²·s)]
+- I_UVA：UVA 輻射強度 [W/m²]（本實驗為 11 W/m²）
+
+各調控因子說明：
 
 1. **LAI依賴的脆弱性 (vulnerability)**
 
