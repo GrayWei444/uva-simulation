@@ -324,9 +324,13 @@ Stress是本模型的核心狀態變量，統一描述UVA造成的氧化脅迫�
 
 **損傷項：**
 
-    damage_rate = k_damage × I_UVA × vulnerability × intraday_factor × nonlinear_factor × circadian_penalty
+    damage_rate = base_damage × (1 - anth_protection) + circadian_damage
 
-其中：
+其中基礎損傷：
+
+    base_damage = k_damage × I_UVA × vulnerability × nonlinear_factor
+
+參數：
 - k_damage = 0.66×10⁻⁶：基礎損傷係數 [1/(W/m²·s)]
 - I_UVA：UVA 輻射強度 [W/m²]（本實驗為 11 W/m²）
 
@@ -351,91 +355,88 @@ Stress是本模型的核心狀態變量，統一描述UVA造成的氧化脅迫�
    - LAI=7.49 (day 29): vulnerability ≈ 較低（成熟期更抗性）
    - LAI=9.50 (day 35): vulnerability ≈ 極低
 
-2. **當日照射時數非線性因子 (intraday_factor)**
+2. **ROS正反饋因子 (nonlinear_factor)**
 
-   機制：損傷效率隨照射時數呈高次冪函數增長，反映修復能力的漸進飽和
-
-   公式（數據驅動擬合）：
-
-       intraday_factor = 1 + k_day × hours_today^n_day
-
-   變數與參數：
-   - hours_today：當日累積 UVA 照射時數（從當日 UVA 開始照射起算，單位：小時）
-   - k_day = 2.29×10⁻⁵：日內逆境係數（由優化器自動擬合）
-   - n_day = 6.6：日內逆境冪次（由優化器自動擬合）
-
-   **數據驅動擬合方法**：
-
-   傳統方法是手動設定 k_day 和 n_day 參數，然而這缺乏客觀性。本研究採用數據驅動擬合方法：
-
-   1. 設定參數搜索範圍：n_day ∈ [2, 15], k_day ∈ [10⁻¹⁰, 10⁻²]
-   2. 使用網格搜索結合 L-BFGS-B 優化器
-   3. 目標函數：最小化所有處理組的 FW 和 Anth 加權誤差
-   4. 優化器自動收斂到 n_day ≈ 6.6, k_day ≈ 2.29×10⁻⁵
-
-   **敏感度分析結果**：
-
-   | n_day 範圍 | 達標率 |
-   |------------|--------|
-   | 2.0 - 5.5  | 6-9/12 |
-   | 5.5 - 6.5  | 10-11/12 |
-   | 6.5 - 7.0  | 12/12 |
-   | 7.0 - 8.0  | 11-12/12 |
-   | 8.0+       | 9-11/12 |
-
-   敏感度分析顯示，只有 n_day 在 6.5-7.0 範圍內才能達到 12/12 完美達標，證明 n ≈ 7 是實驗數據要求的結果，而非人為預設。
-
-   **生物學解釋**：
-
-   高冪次（n ≈ 7）反映了 UVA 誘導 ROS 的正反饋級聯效應：
-   - 蛋白質氧化 → 酶失活 → 清除能力下降
-   - 脂質過氧化 → 膜損傷 → 離子洩漏
-   - 多層效應累積產生高度非線性響應
-
-   典型值（@ 11 W/m² 實際強度）：
-   - 6h/day: intraday_factor ≈ 4.1
-   - 12h/day: intraday_factor ≈ 304.7
-   - 12h/6h 比值 ≈ 73.8
-
-   文獻支持：Mhamdi et al. (2010) 報導 Catalase Km = 40-600 mM，顯示抗氧化酶系統具有飽和特性
-
-3. **Stress非線性累積因子 (nonlinear_factor)**
-
-   機制：ROS級聯效應——已有的傷害會加速新傷害（正反饋）
+   機制：ROS級聯效應——已累積的傷害會加速新傷害產生（正反饋）
 
    公式：
 
        nonlinear_factor = 1 + α × Stress / (K_nonlinear + Stress)
 
    參數：
-   - α (stress_nonlinear_coeff) = 8.0：非線性放大係數
+   - α = 8.0：ROS正反饋放大係數
    - K_nonlinear = 0.8：半飽和常數
+
+   生物學解釋：ROS引發的級聯效應造成非線性放大：
+   - 蛋白質氧化 → 酶失活 → 清除能力下降
+   - 脂質過氧化 → 膜損傷 → 離子洩漏
+   - 多層效應累積產生高度非線性響應
 
    文獻支持：Foyer & Noctor (2005) - ROS cascade amplification
 
-4. **夜間節律抑制 (circadian_disruption_factor)**
+3. **花青素保護因子 (anth_protection)**
 
-   機制：夜間UVA照射打斷生理節律，損傷效率隨暗期時長增加
+   機制：花青素作為抗氧化劑，清除ROS減少損傷
 
-   公式（連續冪函數）：
+   公式：
 
-       circadian_factor = 1 + k_night × hours_in_dark^n_night
+       anth_protection = α_anth × Anth / (K_anth + Anth)
 
    參數：
-   - k_night = 0.15：夜間節律係數
-   - n_night = 2.0：夜間節律冪次
+   - α_anth = 0.5：最大保護效率（0~1）
+   - K_anth = 5×10⁻⁶ kg/m²：保護半飽和常數
+
+   生物學解釋：花青素通過氫原子轉移和電子轉移機制中和ROS，形成反饋保護循環。
+
+   文獻支持：
+   - Xu & Rothstein (2018) DOI:10.1080/15592324.2018.1451708
+     "anthocyanins are produced due to ROS stress and in turn protect plants from growth inhibition and cell death by scavenging excess ROS"
+   - Cerqueira et al. (2023) DOI:10.1007/s11103-023-01362-4
+     "anthocyanins act as efficient antioxidants through hydrogen atom donation and electron transfer mechanisms"
+
+4. **夜間節律損傷 (circadian_damage) — 加項**
+
+   機制：夜間UVA照射打斷生理節律，造成額外損傷。此為加項，僅影響夜間照射處理組。
+
+   公式：
+
+       circadian_damage = k_circ × I_UVA × hours_in_dark^n_circ（僅夜間UVA）
+
+   參數：
+   - k_circ = 1×10⁻⁷：夜間節律損傷係數
+   - n_circ = 2.0：夜間節律損傷冪次
+
+   重要特性：
+   - 日間照射：circadian_damage = 0（無額外損傷）
+   - 夜間照射：circadian_damage > 0（節律干擾損傷）
 
    文獻支持：Harmer (2009)指出代謝受晝夜節律調控；Covington et al. (2008)報導夜間光照會干擾生理節律。
 
 **修復項：**
 
-    repair_rate = k_repair × Stress × carbon_availability
+    repair_rate = k_repair × LAI × repair_saturation_factor
 
 其中：
-- k_repair = 1.0×10⁻⁵：修復係數
-- carbon_availability = 0.5 + 0.5×C_buf/(K_carbon + C_buf)：碳依賴修復能力
 
-修復需要消耗碳/能量，且是全天候進行的。
+    repair_saturation_factor = 1 / (1 + k_sat × hours_today^n_sat)
+
+參數：
+- k_repair = 1×10⁻⁶：LAI修復係數 [1/(m²/m²·s)]
+- k_sat = 1×10⁻⁴：修復飽和係數
+- n_sat = 4.0：修復飽和冪次
+
+生物學解釋：
+1. **修復與LAI正相關**：植株越大，細胞資源越多，修復能力越強。這與LAI脆弱性形成對偶——幼苗既脆弱又修復能力差，成熟植株既抗性又修復能力強。
+
+2. **修復飽和效應**：照射時間越長，修復資源（酶、抗氧化物）越耗竭，修復能力越低。
+
+文獻支持：
+- Puthiyaveetil et al. (2014) DOI:10.1093/pcp/pcu062
+  "decreased biomass and altered PSII functionality" — 生物量與修復能力正相關
+- Järvi et al. (2015) DOI:10.1016/j.bbabio.2015.01.006
+  "a high number of auxiliary proteins assist D1 turnover" — 修復需要大量細胞資源
+- Gill et al. (2015) DOI:10.1155/2015/250158
+  DNA修復機制需要細胞資源支持
 
 文獻支持：Pang & Hays (1991) 報導植物 CPD (環丁烷嘧啶二聚體) 光修復半衰期約 1 小時
 
@@ -467,13 +468,29 @@ Stress通過兩條路徑影響鮮重：
 
    文獻支持：Qian et al. (2021) Plant Physiol.
 
-(D) 花青素合成（FW-based機制）
+(D) 花青素動態（合成-降解-ROS消耗）
 
-本模型採用基於鮮重(FW)的花青素合成機制,避免LAI-FW解耦問題：
+本模型採用基於鮮重(FW)的花青素機制，包含三個過程：
 
-    dAnth/dt = synthesis_rate - k_deg × Anth
+    dAnth/dt = synthesis_rate - natural_degradation - ros_consumption
 
-其中synthesis_rate的計算如下：
+其中：
+- synthesis_rate：合成速率（基礎合成 + Stress誘導）
+- natural_degradation：自然降解（k_deg × Anth）
+- ros_consumption：ROS消耗（花青素清除ROS時被氧化降解）
+
+**ROS消耗項：**
+
+    ros_consumption = k_consume × Anth × base_damage
+
+文獻支持：
+- Enaru et al. (2021) DOI:10.3390/antiox10121967
+  "anthocyanins undergo oxidative degradation during ROS scavenging"
+  "the presence of oxygen can accelerate the degradation process of anthocyanins by a direct oxidative mechanism"
+
+生物學意義：花青素在清除ROS的過程中，自身會被氧化消耗。消耗率與花青素濃度和ROS產生率（base_damage）成正比。
+
+**synthesis_rate的計算如下：**
 
 **步驟1: 計算當前鮮重**
 
@@ -535,9 +552,9 @@ Stress通過兩條路徑影響鮮重：
 
     dLAI/dt = dLAI_base × (1 - β_LAI × Stress/(K_stress + Stress))
 
-    dAnth/dt = base_synthesis + k_stress × Stress - k_deg × Anth
+    dAnth/dt = synthesis_rate - k_deg × Anth - k_consume × Anth × base_damage
 
-    dStress/dt = damage_rate - repair_rate
+    dStress/dt = (base_damage × (1 - anth_protection) + circadian_damage) - k_repair × LAI × repair_sat
 
 2.5.6 模型實現與數值方法
 
@@ -1137,5 +1154,17 @@ H12D3顯著降低鮮重（-30%）並大幅提升花青素（+51%），模型以�
 33. Weiland, M., et al. (2023). A comparison of consistent UV treatment versus inconsistent UV treatment in horticultural production of lettuce: Flavonoid profile, radical scavenging activity and photosynthesis. Photochemical & Photobiological Sciences, 22, 1611-1624. DOI: 10.1007/s43630-023-00402-8
 
 34. Winkel-Shirley, B. (2002). Biosynthesis of flavonoids and effects of stress. Current Opinion in Plant Biology, 5(3), 218-223. DOI: 10.1016/S1369-5266(02)00256-X
+
+35. Xu, Z., & Rothstein, S.J. (2018). ROS-Induced anthocyanin production provides feedback protection by scavenging ROS and maintaining photosynthetic capacity in Arabidopsis. Plant Signaling & Behavior, 13(3), e1451708. DOI: 10.1080/15592324.2018.1451708
+
+36. Cerqueira, J.V.A., de Andrade, M.T., Rafael, D.D., et al. (2023). Anthocyanins and reactive oxygen species: a team of rivals regulating plant development? Plant Molecular Biology, 112(4-5), 213-223. DOI: 10.1007/s11103-023-01362-4
+
+37. Enaru, B., Drețcanu, G., Pop, T.D., Stǎnilǎ, A., & Diaconeasa, Z. (2021). Anthocyanins: Factors Affecting Their Stability and Degradation. Antioxidants, 10(12), 1967. DOI: 10.3390/antiox10121967
+
+38. Puthiyaveetil, S., et al. (2014). Significance of the photosystem II core phosphatase PBCP for plant viability and protein repair in thylakoid membranes. Plant and Cell Physiology, 55(7), 1245-1254. DOI: 10.1093/pcp/pcu062
+
+39. Järvi, S., Suorsa, M., & Aro, E.M. (2015). Photosystem II repair in plant chloroplasts—Regulation, assisting proteins and shared components with photosystem II biogenesis. Biochimica et Biophysica Acta (BBA) - Bioenergetics, 1847(9), 900-909. DOI: 10.1016/j.bbabio.2015.01.006
+
+40. Gill, S.S., Anjum, N.A., Gill, R., Jha, M., & Tuteja, N. (2015). DNA damage and repair in plants under ultraviolet and ionizing radiations. The Scientific World Journal, 2015, 250158. DOI: 10.1155/2015/250158
 
 ================================================================================
