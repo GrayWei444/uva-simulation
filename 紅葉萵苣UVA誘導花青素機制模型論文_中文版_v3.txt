@@ -334,11 +334,11 @@ Stress是本模型的核心狀態變量，統一描述UVA造成的氧化脅迫�
 
    公式：
 
-       vulnerability = cap_vuln × (LAI_ref/LAI)^n / (cap_vuln + (LAI_ref/LAI)^n)
+       vulnerability = cap_vuln × (LAI_ref/LAI)^n_vuln / (cap_vuln + (LAI_ref/LAI)^n_vuln)
 
    參數：
-   - LAI_ref = 6.5：參考LAI
-   - n_vuln = 8：脆弱性指數
+   - LAI_ref = 6.5：參考LAI（m²/m²）
+   - n_vuln = 8：脆弱性指數（無量綱）
    - cap_vuln = 100：上限值（使用Sigmoid形式確保連續）
 
    典型值：
@@ -353,11 +353,12 @@ Stress是本模型的核心狀態變量，統一描述UVA造成的氧化脅迫�
 
    公式（數據驅動擬合）：
 
-       intraday_factor = 1 + k_day × hours^n_day
+       intraday_factor = 1 + k_day × hours_today^n_day
 
-   參數（由優化器自動擬合）：
-   - k_day = 2.29×10⁻⁵：日內逆境係數
-   - n_day = 6.6：日內逆境冪次
+   變數與參數：
+   - hours_today：當日累積 UVA 照射時數（從當日 UVA 開始照射起算，單位：小時）
+   - k_day = 2.29×10⁻⁵：日內逆境係數（由優化器自動擬合）
+   - n_day = 6.6：日內逆境冪次（由優化器自動擬合）
 
    **數據驅動擬合方法**：
 
@@ -758,7 +759,7 @@ UV照射後，處理組之間觀察到顯著的形態差異（圖6）。UVB處�
 - **L6D12 (Stress=7.1)**：幼期照射（高vulnerability）+每日6h+持續12天→中等Stress累積
 
 **純連續機制：**
-- 日內逆境：`day_factor = 1 + k_day × hours^n_day`（k=2.29×10⁻⁵, n=6.6）
+- 日內逆境：`day_factor = 1 + k_day × hours_today^n_day`（k=2.29×10⁻⁵, n=6.6, hours_today為當日累積照射時數）
   - 6h: day_factor ≈ 4.1
   - 12h: day_factor ≈ 304.7（約73.8倍差距）
 - 夜間節律：`circ = 1 + k_night × hours_in_dark^n_night`（k=0.15, n=2）
@@ -789,9 +790,9 @@ UV照射後，處理組之間觀察到顯著的形態差異（圖6）。UVB處�
 
 此圖展示intraday_factor函數與當日已照射時數的關係，其數學形式為：
 
-    intraday_factor = 1 + k_day × hours^n_day
+    intraday_factor = 1 + k_day × hours_today^n_day
 
-其中參數由數據驅動擬合確定：k_day = 2.29×10⁻⁵, n_day = 6.6。
+其中 hours_today 為當日累積 UVA 照射時數（從當日開始照射起算），參數由數據驅動擬合確定：k_day = 2.29×10⁻⁵, n_day = 6.6。
 
 圖中標記了各處理組每日照射時數對應的損傷效率因子：
 - VL3D12 (3h/day): intraday_factor ≈ 1.0
@@ -800,7 +801,7 @@ UV照射後，處理組之間觀察到顯著的形態差異（圖6）。UVB處�
 
 曲線呈現明顯的非線性特徵：由於冪函數的高次冪特性（n=6.6），損傷效率在較短時數時增長緩慢，但隨時數增加而急劇上升。這反映了植物修復能力的漸進飽和——短時間內修復機制尚能應對，但隨著照射時間延長，ROS級聯效應逐漸放大，導致損傷累積加速。H12D3組的高Stress（32.4）正是由此非線性放大效應所導致。
 
-[圖說]: 橫軸為當日已照射時數(hours)，縱軸為損傷效率因子(intraday_factor)。6小時處以垂直虛線標記為參考點，各處理組的每日照射時數以圓點標記在曲線上。曲線為連續冪函數，無硬性閾值。
+[圖說]: 橫軸為當日累積照射時數 hours_today（小時），縱軸為損傷效率因子(intraday_factor)。6小時處以垂直虛線標記為參考點，各處理組的每日照射時數以圓點標記在曲線上。曲線為連續冪函數，無硬性閾值。
 
 **圖16. 模型預測與實驗觀測值比較 (Model Prediction vs Observation)**
 
