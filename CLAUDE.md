@@ -70,27 +70,51 @@ factor = 1 + k * softplus((E - E_ref) / E_scale) ** n
 
 ---
 
-## 4. 已確認的核心機制
+## 4. 參數校準策略
 
-| 機制 | 類型 | 說明 |
-|------|------|------|
-| 日內逆境累積 | 連續冪函數 | `1 + k × (hours/h_ref)^n` |
-| 夜間節律干擾 | **待修改** | 需改為連續函數 |
-| LAI 脆弱性 | 連續 sigmoid | `cap × (LAI_ref/LAI)^n / (cap + ...)` |
-| ROS 清除 | 連續 Michaelis-Menten | `Vmax × S / (Km + S)` |
+**校準順序（必須遵守）：**
+
+| 順序 | 處理組 | 主要調整機制 | 目標 |
+|------|--------|-------------|------|
+| 1 | **L6D6** | 基準組 | Stress ≈ 0，幾乎無損傷 |
+| 2 | **L6D6-N** | 夜間節律損傷 | 比 L6D6 損傷大 |
+| 3 | **VL3D12** | LAI 脆弱性 | 早期照射損傷 |
+| 4 | **L6D12** | LAI 脆弱性 | 早期照射損傷 |
+| 5 | **H12D3** | ROS 非線性放大 | 長時間照射損傷 |
+
+**關鍵原則：**
+- L6D6 是基準，6h/day 日間照射應該 **幾乎無損傷**
+- ROS 非線性放大 **只針對 H12D3**（12h/day）
+- D12 組損傷 **靠 LAI 脆弱性**，不是 ROS 放大
+- 先讓 L6D6 達標，再依序調整其他組
 
 ---
 
-## 5. 關鍵文件結構
+## 5. 已確認的核心機制 (v8.0)
+
+| 機制 | 公式 | 說明 |
+|------|------|------|
+| ROS 動態 | `dROS/dt = k_prod × I_UVA × amp - k_clear × ROS` | 當日氧化壓力 |
+| ROS 非線性放大 | `amp = 1 + k × hours^n` | 針對 H12D3 |
+| LAI 脆弱性 | `vuln = A × exp(-k × LAI) + 1` | 針對 D12 組 |
+| 夜間節律損傷 | `circ = k × I_UVA × hours_dark^n` | 針對 L6D6-N |
+| 損傷公式 | `damage = k × ROS × vuln × (1 - protection)` | 簡化版 |
+
+---
+
+## 6. 關鍵文件結構
 
 | 文件 | 用途 |
 |------|------|
-| `simulate_uva_model.py` | 主模擬腳本 (v6.9) |
-| `simulate_uva_model_ros.py` | ROS 版本 |
+| `simulate_uva_model_v8.py` | v8.0 ROS 動態模型版 |
+| `simulate_uva_model_v72.py` | v7.x 舊版（備份） |
 | `MODEL_DESIGN_NOTES.md` | 模型設計筆記 |
 | `HANDOFF_STATUS.md` | 聊天交接狀態 |
 | `CLAUDE.md` | 本文件 |
 
 ---
 
-**嚴格遵守以上守則，特別是「禁止硬閾值」原則！**
+**嚴格遵守以上守則，特別是：**
+1. **禁止硬閾值**
+2. **L6D6 優先達標，Stress ≈ 0**
+3. **各組別用各自機制調整**

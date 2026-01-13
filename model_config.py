@@ -83,7 +83,7 @@ TREATMENT_CONFIGS = {
     # --- 標準日間照射 (最佳處理) ---
     'L6D6': {
         'uva_on': True,
-        'uva_intensity': 22.0,          # UVA強度 [W/m²] (11 W/m² UVA功率 / σ_PAR 0.5 = 22)
+        'uva_intensity': 11.0,          # UVA強度 [W/m²] (v10.7: 實際LED功率)
         'uva_start_day': 29,            # 播種後第29天開始
         'uva_end_day': 35,              # 播種後第35天結束 (共6天)
         'uva_hour_on': 10,              # 10:00 開始
@@ -94,7 +94,7 @@ TREATMENT_CONFIGS = {
     # --- 夜間照射 (生理節律打斷效應) ---
     'L6D6-N': {
         'uva_on': True,
-        'uva_intensity': 22.0,
+        'uva_intensity': 11.0,          # v10.7: 實際LED功率
         'uva_start_day': 29,
         'uva_end_day': 35,
         'uva_hour_on': 22,              # 22:00 開始
@@ -105,7 +105,7 @@ TREATMENT_CONFIGS = {
     # --- 高劑量脅迫 (損傷機制) ---
     'H12D3': {
         'uva_on': True,
-        'uva_intensity': 22.0,
+        'uva_intensity': 11.0,          # v10.7: 實際LED功率
         'uva_start_day': 32,            # 播種後第32天開始
         'uva_end_day': 35,              # 播種後第35天結束 (共3天)
         'uva_hour_on': 6,               # 06:00 開始
@@ -116,7 +116,7 @@ TREATMENT_CONFIGS = {
     # --- 極低劑量長期 (適應效應) ---
     'VL3D12': {
         'uva_on': True,
-        'uva_intensity': 22.0,
+        'uva_intensity': 11.0,          # v10.7: 實際LED功率
         'uva_start_day': 23,            # 播種後第23天開始
         'uva_end_day': 35,              # 播種後第35天結束 (共12天)
         'uva_hour_on': 10,              # 10:00 開始
@@ -124,15 +124,15 @@ TREATMENT_CONFIGS = {
         'description': '極低劑量長期 (3h/day, 12天)',
     },
 
-    # --- 低劑量長期 (適應效應) ---
+    # --- 低劑量長期 (形態效應主導) ---
     'L6D12': {
         'uva_on': True,
-        'uva_intensity': 22.0,
+        'uva_intensity': 11.0,          # v10.7: 實際LED功率
         'uva_start_day': 23,
         'uva_end_day': 35,
         'uva_hour_on': 10,
         'uva_hour_off': 16,
-        'description': '低劑量長期 (6h/day, 12天)',
+        'description': '低劑量長期 (6h/day, 12天) - 形態效應累積',
     },
 
     # --- 正弦波漸進照射 (動態模式) ---
@@ -174,12 +174,17 @@ TREATMENT_CONFIGS = {
 # - Anth: 花青素濃度 [ppm = mg/kg FW]
 
 TARGETS = {
-    'CK': {'FW': 87.0, 'Anth': 43.30},         # 更新 Anth
-    'L6D6': {'FW': 91.4, 'Anth': 49.40},
-    'L6D6-N': {'FW': 80.8, 'Anth': 49.26},
-    'H12D3': {'FW': 60.6, 'Anth': 65.06},      # 還原
-    'VL3D12': {'FW': 67.0, 'Anth': 48.17},     # 更新 Anth: 51.90→48.17
-    'L6D12': {'FW': 60.4, 'Anth': 51.78},      # 還原 FW, 更新 Anth: 55.92→51.78
+    # 數據更新 (2026-01-09)
+    # 鮮重 (g/plant):
+    #   Ref=87, 6h/6d(D)=91.4, 6h/6d(N)=80.8, 12h/3d=60.6, 3h/12d=67, 6h/12d=60.4
+    # 花青素濃度 (ppm = mg/kg FW):
+    #   單位已更正: 原 mg/100g → 現 mg/kg (×10)
+    'CK': {'FW': 87.0, 'Anth': 433.0},       # Anth STD: 9.6
+    'L6D6': {'FW': 91.4, 'Anth': 494.0},     # Anth STD: 6.8
+    'L6D6-N': {'FW': 80.8, 'Anth': 493.0},   # Anth STD: 7.4
+    'H12D3': {'FW': 60.6, 'Anth': 651.0},    # Anth STD: 14.6
+    'VL3D12': {'FW': 67.0, 'Anth': 482.0},   # Anth STD: 2.7
+    'L6D12': {'FW': 60.4, 'Anth': 518.0},    # Anth STD: 3.4
 }
 
 
