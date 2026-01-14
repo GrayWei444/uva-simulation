@@ -135,6 +135,70 @@ TREATMENT_CONFIGS = {
         'description': '低劑量長期 (6h/day, 12天) - 形態效應累積',
     },
 
+    # ==========================================================================
+    # 驗證組 (3天梯度實驗 - Day 32-35)
+    # ==========================================================================
+    # 驗證對照組 (與訓練組 CK 相同設定，但獨立觀測值)
+    'CK_val': {
+        'uva_on': False,
+        'description': '驗證對照組 (無UVA)',
+    },
+
+    # 極低日劑量 3天
+    'VL3D3': {
+        'uva_on': True,
+        'uva_intensity': 11.0,
+        'uva_start_day': 32,
+        'uva_end_day': 35,
+        'uva_hour_on': 10,
+        'uva_hour_off': 13,             # 3h/day
+        'description': '極低日劑量 (3h/day, 3天)',
+    },
+
+    # 低日劑量 3天
+    'L6D3': {
+        'uva_on': True,
+        'uva_intensity': 11.0,
+        'uva_start_day': 32,
+        'uva_end_day': 35,
+        'uva_hour_on': 10,
+        'uva_hour_off': 16,             # 6h/day
+        'description': '低日劑量 (6h/day, 3天)',
+    },
+
+    # 中日劑量 3天
+    'M9D3': {
+        'uva_on': True,
+        'uva_intensity': 11.0,
+        'uva_start_day': 32,
+        'uva_end_day': 35,
+        'uva_hour_on': 7,
+        'uva_hour_off': 16,             # 9h/day
+        'description': '中日劑量 (9h/day, 3天)',
+    },
+
+    # 高日劑量 3天 (驗證組 - 與訓練組 H12D3 設定相同但獨立觀測值)
+    'H12D3_val': {
+        'uva_on': True,
+        'uva_intensity': 11.0,
+        'uva_start_day': 32,
+        'uva_end_day': 35,
+        'uva_hour_on': 6,
+        'uva_hour_off': 18,             # 12h/day
+        'description': '高日劑量 (12h/day, 3天) - 驗證組',
+    },
+
+    # 極高日劑量 3天
+    'VH15D3': {
+        'uva_on': True,
+        'uva_intensity': 11.0,
+        'uva_start_day': 32,
+        'uva_end_day': 35,
+        'uva_hour_on': 5,
+        'uva_hour_off': 20,             # 15h/day
+        'description': '極高日劑量 (15h/day, 3天)',
+    },
+
     # --- 正弦波漸進照射 (動態模式) ---
     # 照射強度隨時間呈正弦波變化，從0漸增到最大值再降至0
     # 週期12小時 (06:00-18:00)，總有效劑量相當於6小時連續照射
@@ -185,6 +249,13 @@ TARGETS = {
     'H12D3': {'FW': 60.6, 'Anth': 651.0},    # Anth STD: 14.6
     'VL3D12': {'FW': 67.0, 'Anth': 482.0},   # Anth STD: 2.7
     'L6D12': {'FW': 60.4, 'Anth': 518.0},    # Anth STD: 3.4
+    # --- 驗證組 (3天梯度實驗) ---
+    'CK_val': {'FW': 85.2, 'Anth': 413.0},    # 驗證對照組
+    'VL3D3': {'FW': 89.0, 'Anth': 437.0},     # 3h/day × 3d
+    'L6D3': {'FW': 92.2, 'Anth': 468.0},      # 6h/day × 3d
+    'M9D3': {'FW': 83.8, 'Anth': 539.0},      # 9h/day × 3d
+    'H12D3_val': {'FW': 62.2, 'Anth': 657.0}, # 12h/day × 3d (驗證組)
+    'VH15D3': {'FW': 51.3, 'Anth': 578.0},    # 15h/day × 3d
 }
 
 
@@ -192,13 +263,13 @@ TARGETS = {
 # 第四部分: 資料集分割 (訓練/驗證/測試)
 # ==============================================================================
 # 說明:
-# - 訓練集: 用於參數估計
-# - 驗證集: 用於時間尺度泛化驗證
+# - 訓練集: 用於參數估計 (6 組)
+# - 驗證集: 用於 3 天梯度實驗驗證 (6 組)
 # - 測試集: SIN, INT (動態模式，尚未實現)
 
 DATASET_SPLIT = {
-    'train': ['CK', 'L6D6', 'L6D6-N', 'H12D3', 'VL3D12', 'L6D12'],  # 全部 6 組
-    'validation': [],  # 無驗證集
+    'train': ['CK', 'L6D6', 'L6D6-N', 'H12D3', 'VL3D12', 'L6D12'],
+    'validation': ['CK_val', 'VL3D3', 'L6D3', 'M9D3', 'H12D3_val', 'VH15D3'],
     'test': [],
 }
 

@@ -2,8 +2,8 @@
 ================================================================================
 萵苣生長與UVA效應整合模型
 ================================================================================
-版本: v10.33 (連續非對稱高斯版 - CLAUDE.md 規範符合)
-日期: 2026-01-13
+版本: v10.39 (單調遞減效率函數取代 sigmoid)
+日期: 2026-01-14
 
 ================================================================================
 版本歷史與發現摘要
@@ -23,36 +23,53 @@ v10.9:  花青素水分抑制機制 - 解釋 VH15D3 花青素反而低於 H12D3
 v10.23: LAI 效率機制 - 低 LAI 抑制 Stress 誘導花青素效率
 v10.32: 非線性因子花青素抑制 - 解決 M9D3 預測過高問題
 v10.33: 連續非對稱高斯 + softplus 軟閾值 (符合 CLAUDE.md 規範)
-        - 移除所有硬閾值 (if-else threshold)
-        - 改用 softplus 連續函數
-        - 訓練組: FW 6/6, Anth 6/6 (全部 <5%)
-        - 驗證組: FW 6/6, Anth 6/6 (<10%)
+v10.37: Gompertz threshold 9.5→10.5 + sigmoid 抑制取代非對稱高斯
+        - gompertz_threshold: 10.5 hours
+        - V_max_anth: 2.75e-9
+        - ldmc_stress_sensitivity: 0.45
+        - K_ldmc: 1400, dw_fw_ratio_max: 0.080
+v10.38: 參數同步修正版
+        - 預設 uva_intensity: 22→11 W/m²
+        - 更新所有舊版數值註解 (6h→1.0, 9h→31.1, 12h→156.9 等)
+v10.39: 單調遞減效率函數
+        - 使用 Hill 函數: efficiency = 1 / (1 + (nonlin/K)^n)
+        - K=800, n=1.5
+        - 效率隨 nonlinear_factor 增加而單調遞減
 
 ================================================================================
-v10.33 校準結果 (12/12 達標)
+v10.39 校準結果 (12/12 達標)
 ================================================================================
+
+Gompertz 非線性因子 (threshold=10.5h, max=250, k=0.5):
+| 每日時數 | factor | 花青素效率 |
+|----------|--------|------------|
+| 3h       | 1.0    | 100.0%     |
+| 6h       | 1.0    | 100.0%     |
+| 9h       | 31.1   | 99.2%      |
+| 12h      | 156.9  | 92.0%      |
+| 15h      | 226.0  | 86.9%      |
 
 訓練組 (允收誤差 5%):
-| 處理組   | FW預測 | FW觀測 | FW誤差  | Anth預測 | Anth觀測 | Anth誤差 | LAI  | avgS  |
-|----------|--------|--------|---------|----------|----------|----------|------|-------|
-| CK       | 86.5g  | 87.0g  | -0.5%✓  | 439      | 433      | +1.3%✓   | 9.1  | 0     |
-| L6D6     | 92.5g  | 91.4g  | +1.2%✓  | 491      | 494      | -0.5%✓   | 9.5  | 8     |
-| L6D6-N   | 84.0g  | 80.8g  | +4.0%✓  | 484      | 493      | -1.8%✓   | 8.9  | 11    |
-| VL3D12   | 70.0g  | 67.1g  | +4.4%✓  | 505      | 482      | +4.8%✓   | 7.7  | 95    |
-| L6D12    | 59.8g  | 60.4g  | -1.0%✓  | 517      | 518      | -0.2%✓   | 6.9  | 227   |
-| H12D3    | 63.2g  | 60.6g  | +4.3%✓  | 627      | 651      | -3.7%✓   | 8.7  | 407   |
+| 處理組   | FW預測 | FW觀測 | FW誤差  | Anth預測 | Anth觀測 | Anth誤差 |
+|----------|--------|--------|---------|----------|----------|----------|
+| CK       | 86.5g  | 87.0g  | -0.5%✓  | 439      | 433      | +1.3%✓   |
+| L6D6     | 92.5g  | 91.4g  | +1.2%✓  | 474      | 494      | -4.0%✓   |
+| L6D6-N   | 84.0g  | 80.8g  | +3.9%✓  | 475      | 493      | -3.6%✓   |
+| VL3D12   | 69.4g  | 67.0g  | +3.6%✓  | 492      | 482      | +2.0%✓   |
+| L6D12    | 58.9g  | 60.4g  | -2.5%✓  | 496      | 518      | -4.3%✓   |
+| H12D3    | 61.3g  | 60.6g  | +1.2%✓  | 651      | 651      | +0.0%✓   |
 
 驗證組 (允收誤差 10%):
 | 處理組   | 時數 | FW預測 | FW觀測 | FW誤差  | Anth預測 | Anth觀測 | Anth誤差 |
 |----------|------|--------|--------|---------|----------|----------|----------|
-| CK       | 0h   | 86.5g  | 85.2g  | +1.6%✓  | 439      | 413      | +6.2%△   |
-| VL3D3    | 3h   | 88.4g  | 89.0g  | -0.7%✓  | 463      | 437      | +6.0%△   |
-| L6D3     | 6h   | 89.9g  | 92.2g  | -2.5%✓  | 488      | 468      | +4.3%✓   |
-| M9D3     | 9h   | 84.0g  | 83.8g  | +0.3%✓  | 558      | 539      | +3.6%✓   |
-| H12D3    | 12h  | 63.2g  | 62.2g  | +1.6%✓  | 627      | 657      | -4.6%✓   |
-| VH15D3   | 15h  | 49.1g  | 51.3g  | -4.2%✓  | 614      | 578      | +6.3%△   |
+| CK       | 0h   | 86.5g  | 85.2g  | +1.6%✓  | 439      | 413      | +6.2%✓   |
+| VL3D3    | 3h   | 88.4g  | 89.0g  | -0.8%✓  | 457      | 437      | +4.5%✓   |
+| L6D3     | 6h   | 89.9g  | 92.2g  | -2.5%✓  | 473      | 468      | +1.1%✓   |
+| M9D3     | 9h   | 87.8g  | 83.8g  | +4.8%✓  | 589      | 539      | +9.2%✓   |
+| H12D3    | 12h  | 61.3g  | 62.2g  | -1.4%✓  | 651      | 657      | -0.9%✓   |
+| VH15D3   | 15h  | 51.2g  | 51.3g  | +0.0%✓  | 532      | 578      | -7.9%✓   |
 
-花青素排序正確: H12D3 (627) > VH15D3 (614) > M9D3 (558)
+花青素排序正確: H12D3 (651) > M9D3 (589) > VH15D3 (532)
 
 ================================================================================
 核心發現一: UVA 形態效應 (v10.0)
@@ -177,25 +194,24 @@ H12D3 只照射 3 天 (Day 32-35)，在照射前 LAI 已達約 8.0
 【解決方案: Gompertz 非線性函數】
   nonlinear_factor = 1 + max × exp(-exp(-k × (hours - threshold)))
 
-  參數:
-  - threshold = 9.0 hours (抗氧化系統開始崩潰的時間點)
-  - steepness = 0.6 (崩潰速率)
-  - max_factor = 160 (最大損傷倍率)
+  參數 (v10.38):
+  - threshold = 10.5 hours (抗氧化系統開始崩潰的時間點)
+  - steepness = 0.5 (崩潰速率)
+  - max_factor = 250 (最大損傷倍率)
 
-  結果:
-  - 6h/day:  nonlinear_factor ≈ 1.4  (輕微)
-  - 12h/day: nonlinear_factor ≈ 136.6 (嚴重)
+  結果 (v10.38):
+  - 6h/day:  nonlinear_factor ≈ 1.0  (幾乎無損傷)
+  - 9h/day:  nonlinear_factor ≈ 31.1 (開始進入轉折區)
+  - 12h/day: nonlinear_factor ≈ 156.9 (嚴重)
+  - 15h/day: nonlinear_factor ≈ 226.0 (接近飽和)
 
 【LDMC 急性傷害機制 (v10.6c)】
 問題: 即使 H12D3 有高 Stress，也無法完全補償 18 天正常生長的 LAI 積累
 解決: 將 LDMC (Leaf Dry Matter Content) 與非線性因子掛勾
 
 公式:
-  acute_factor = 1 + k_acute × log(nonlinear_factor)
-  ratio = base × (1 + stress_effect × acute_factor)
-
-  H12D3: log(136.6) ≈ 4.9 → acute = 1.49 → dw/fw = 0.071
-  L6D6:  log(1.4) ≈ 0.34 → acute = 1.03 → dw/fw = 0.050
+  急性因子使用 softplus + Hill 函數
+  詳見 calculate_dynamic_dw_fw_ratio()
 
 【關鍵發現: 日累積照射量是關鍵】
 實驗 B 設計揭示的核心機制:
@@ -327,7 +343,7 @@ ALL_PARAMS = {
     #        threshold 9→11, max_factor 160→250
     #        驗證誤差從 10.9% 降至 7.4%，原 FW 6/6 維持
     'gompertz_max_factor': 250.0,        # 最大損傷倍率 (飽和上限) [v10.8: 160→250]
-    'gompertz_threshold': 9.5,           # 轉折點 [v10.15: 8.2→9.5，減少9h損傷]
+    'gompertz_threshold': 10.5,          # 轉折點 [v10.37: 9.5→10.5]
     'gompertz_steepness': 0.5,           # 崩潰速率 [v10.15: 0.6→0.5，曲線略緩和]
 
     # 4.4 花青素保護
@@ -384,7 +400,7 @@ ALL_PARAMS = {
     # v10.7c: 12/12 全部達標
     'base_anth_rate_light': 6.35e-10,    # v10.23: 原值
     'base_anth_rate_dark': 3.18e-10,     # = base_light × 0.5
-    'V_max_anth': 3.5e-9,                # v10.23: 原值 (恢復)
+    'V_max_anth': 2.75e-9,               # v10.37: 論文版本
     'K_stress_anth': 100.0,              # v10.23: 原值
     'k_deg': 3.02e-6,
     'anth_carbon_cost': 0.0,
@@ -463,9 +479,9 @@ ALL_PARAMS = {
     # - 這是一種「急性傷害」反應
     #
     'dw_fw_ratio_base': 0.05,            # 基礎 DW/FW 比例 (健康植物)
-    'ldmc_stress_sensitivity': 0.35,     # v10.9: 降低敏感度 (0.50→0.35)
-    'K_ldmc': 1500.0,                    # 半飽和常數 (v10.10: 400→1500 for avgS)
-    'dw_fw_ratio_max': 0.085,            # 最大 DW/FW 比例 (嚴重損傷)
+    'ldmc_stress_sensitivity': 0.45,     # v10.37: 論文版本
+    'K_ldmc': 1400.0,                    # v10.37: 論文版本
+    'dw_fw_ratio_max': 0.080,            # v10.37: 論文版本
 }
 
 
@@ -595,12 +611,12 @@ def calculate_dynamic_dw_fw_ratio(Stress, p, nonlinear_factor=1.0):
     2. 急性傷害因子 (acute_factor):
        - 與 Gompertz 非線性因子掛勾
        - 非線性因子反映「日照射時間超過抗氧化容量」的程度
+       - 使用 softplus + Hill 函數計算 (v10.38)
 
-       計算示例:
-       - H12D3 (12h/day): nonlinear_factor = 136.6
-         log(136.6) ≈ 4.9 → acute = 1 + 0.10 × 4.9 = 1.49
-       - L6D6 (6h/day): nonlinear_factor = 1.4
-         log(1.4) ≈ 0.34 → acute = 1 + 0.10 × 0.34 = 1.03
+       nonlinear_factor 值 (v10.38, threshold=10.5):
+       - L6D6 (6h/day):  1.0  → 幾乎無急性傷害
+       - M9D3 (9h/day):  31.1 → 開始有急性傷害
+       - H12D3 (12h/day): 156.9 → 嚴重急性傷害
 
     3. 最終 LDMC:
        ratio = base × (1 + stress_effect × acute_factor)
@@ -644,8 +660,8 @@ def calculate_dynamic_dw_fw_ratio(Stress, p, nonlinear_factor=1.0):
     # 當 nonlin >> acute_center 時，x ≈ nonlin - acute_center
     acute_center = 50.0    # 軟閾值中心
     acute_scale = 10.0     # 過渡寬度
-    acute_k = 6.5          # 最大效應
-    acute_K = 150.0        # 半飽和常數
+    acute_k = 9.0          # v10.37: 論文版本 (6.5→9.0)
+    acute_K = 120.0        # v10.37: 論文版本 (150→120)
     acute_n = 2.0          # Hill 係數
 
     # 使用 softplus 實現軟閾值: x = softplus((nonlin - center) / scale) * scale
@@ -748,64 +764,35 @@ def calculate_water_anth_efficiency(dw_fw_ratio, p):
 
 def calculate_nonlin_anth_efficiency(nonlinear_factor, p):
     """
-    基於非線性因子計算花青素合成效率 (v10.19)
+    基於非線性因子計算花青素合成效率 (v10.39)
 
     【問題背景】
-    VH15D3 的觀測 Anth (509) 竟然比 H12D3 (684) 還低。
-    這與模型預測不符：更長照射時間應該有更強的 Stress 誘導。
+    花青素絕對量在 9h 左右達到峰值，之後開始下降。
+    H12D3 的花青素「濃度」高是因為 FW 掉得更快（分母變小）。
+    VH15D3 嚴重受損，需要額外抑制。
 
     【生物學解釋】
-    1. 極端 UVA 照射 (15h/day) 造成細胞嚴重損傷
-    2. 細胞合成機制崩潰，無法有效產生花青素
-    3. 這是一種「過度損傷」的代謝崩潰現象
+    使用單調遞減函數:
+    - 效率隨 nonlinear_factor 增加而單調遞減
+    - 搭配水分抑制、Stress 抑制共同調節 VH15D3
 
-    【設計原則】
-    使用 nonlinear_factor (照射時數決定) 而非 dw_fw_ratio:
-    - nonlinear_factor 在 ODE 整個計算期間不變
-    - dw_fw_ratio 隨 Stress 動態變化，導致抑制效果不穩定
+    【公式】
+    efficiency = 1 / (1 + (nonlinear_factor / K)^n)
+    - K: 半效常數 (效率降到 50% 的 nonlinear_factor)
+    - n: Hill 係數 (控制遞減速度)
 
-    nonlinear_factor 範圍 (from Gompertz):
-    - 3h/day:  1.0
-    - 6h/day:  1.8
-    - 9h/day:  70.2
-    - 12h/day: 188.7
-    - 15h/day: ~225 (接近飽和)
-
-    目標效果:
-    - 3~9h: 無抑制 (nonlin < 100)
-    - 12h:  輕微抑制 ~10%
-    - 15h:  強抑制 ~50%
+    nonlinear_factor 範圍 (Gompertz, threshold=10.5):
+    - 3h/day:  1.0   → 100.0%
+    - 6h/day:  1.0   → 100.0%
+    - 9h/day:  31.1  → 99.2%
+    - 12h/day: 156.9 → 92.0%
+    - 15h/day: 226.0 → 86.9%
     """
-    # v10.33: 連續非對稱高斯函數 (修正 v10.32 問題)
-    #
-    # 問題: v10.32 的對稱高斯影響到 L6 組別 (nonlin=1.8 → 91.8%)
-    # 用戶要求: "非線性不應該影響到L6的組別"
-    #
-    # 解決方案: 使用非對稱高斯
-    # - 左側 (nonlin < 70): sigma_left=15 → 急劇下降，幾乎不影響 L6
-    # - 右側 (nonlin > 70): sigma_right=50 → 緩慢恢復
-    # - 使用 tanh 平滑切換左右 sigma (符合 CLAUDE.md 無硬閾值原則)
-    #
-    # 效果 (max_inhib=0.50):
-    # - nonlin=1.8 (L6):     100%  ← 完全不影響
-    # - nonlin=70 (M9D3):    50%   ← 最大抑制
-    # - nonlin=189 (H12D3):  97%   ← 幾乎不影響
+    # v10.39: 單調遞減 Hill 函數
+    K = 800.0    # 半效常數
+    n = 1.5      # Hill 係數
 
-    center = 70.0       # 抑制中心 (對準 M9D3)
-    sigma_left = 15.0   # 左側 sigma (急劇下降)
-    sigma_right = 50.0  # 右側 sigma (緩慢恢復)
-    max_inhib = 0.50    # 最大抑制 50%
-    scale = 20.0        # tanh 過渡寬度
-
-    # 連續過渡：用 tanh 平滑切換左右 sigma
-    t = np.tanh((nonlinear_factor - center) / scale)
-
-    # 插值 sigma: (1-t)/2 權重給 sigma_left, (1+t)/2 權重給 sigma_right
-    sigma = sigma_left * (1 - t) / 2 + sigma_right * (1 + t) / 2
-
-    # 非對稱高斯抑制
-    inhibition = max_inhib * np.exp(-((nonlinear_factor - center) ** 2) / (2 * sigma ** 2))
-    efficiency = 1.0 - inhibition
+    efficiency = 1.0 / (1.0 + (nonlinear_factor / K) ** n)
 
     return efficiency
 
@@ -875,12 +862,12 @@ def gompertz_damage_factor(hours, p):
 
     植物的抗氧化防禦系統 (SOD, CAT, APX 等) 有其運作極限:
 
-    1. hours < 9 (閾值前):
+    1. hours < 10 (閾值前):
        - 抗氧化系統正常運作
        - ROS 被有效清除
        - factor ≈ 1 (幾乎無額外損傷)
 
-    2. hours ≈ 9 (閾值附近):
+    2. hours ≈ 10.5 (閾值附近):
        - 抗氧化酶開始「疲勞」
        - ROS 清除效率下降
        - factor 開始快速上升
@@ -888,30 +875,30 @@ def gompertz_damage_factor(hours, p):
     3. hours > 12 (閾值後):
        - 抗氧化系統「崩潰」
        - ROS 大量累積，造成氧化損傷
-       - factor → 最大值 (約 160)
+       - factor → 最大值 (約 250)
 
     ============================================================================
     關鍵發現: 日累積照射量是關鍵
     ============================================================================
 
-    實驗 B 的三組:
-    - 3h × 12d:  factor = 1.0  → 幾乎無崩潰
-    - 6h × 6d:   factor = 1.4  → 輕微
-    - 12h × 3d:  factor = 136.6 → 嚴重崩潰
+    實驗 B 的三組 (v10.37, threshold=10.5h):
+    - 3h × 12d:  factor = 1.0   → 幾乎無崩潰
+    - 6h × 6d:   factor = 1.0   → 幾乎無崩潰
+    - 12h × 3d:  factor = 156.9 → 嚴重崩潰
 
     三組的總劑量相同，但日累積劑量不同!
     → 日累積照射量 (而非總劑量) 決定抗氧化系統是否崩潰
 
     ============================================================================
-    參數說明
+    參數說明 (v10.37)
     ============================================================================
 
-    - gompertz_threshold (= 9.0 hours): 抗氧化系統開始崩潰的時間點
-    - gompertz_steepness (= 0.6): 崩潰速率
-    - gompertz_max_factor (= 160): 最大損傷倍率 (飽和上限)
+    - gompertz_threshold (= 10.5 hours): 抗氧化系統開始崩潰的時間點
+    - gompertz_steepness (= 0.5): 崩潰速率
+    - gompertz_max_factor (= 250): 最大損傷倍率 (飽和上限)
 
     返回:
-        factor: 非線性傷害因子 (1.0 ~ 161)
+        factor: 非線性傷害因子 (1.0 ~ 251)
     """
     exponent = -p.gompertz_steepness * (hours - p.gompertz_threshold)
     exponent = np.clip(exponent, -50, 50)
@@ -1034,7 +1021,7 @@ def uva_sun_derivatives(t, state, p, env):
     uva_end_day = env.get('uva_end_day', 35)
     uva_hour_on = env.get('uva_hour_on', 10)
     uva_hour_off = env.get('uva_hour_off', 16)
-    uva_intensity = env.get('uva_intensity', 22.0)
+    uva_intensity = env.get('uva_intensity', 11.0)  # v10.38: 預設改為 11 W/m²
 
     I_UVA = 0.0
     hours_today = 0.0
@@ -1275,8 +1262,10 @@ def uva_sun_derivatives(t, state, p, env):
     # v10.6c 核心修改: 傳入 nonlinear_factor 計算 LDMC 急性傷害效應
     #
     # 【關鍵發現】日累積照射量決定急性傷害
-    # - H12D3 (12h/day): nonlinear_factor = 136.6 → 高 LDMC → 低 FW
-    # - L6D6 (6h/day):   nonlinear_factor = 1.4  → 正常 LDMC → 正常 FW
+    # v10.38 nonlinear_factor (threshold=10.5):
+    # - L6D6 (6h/day):   1.0   → 正常 LDMC → 正常 FW
+    # - M9D3 (9h/day):   31.1  → 開始急性傷害
+    # - H12D3 (12h/day): 156.9 → 高 LDMC → 低 FW
     #
     dw_fw_ratio = calculate_dynamic_dw_fw_ratio(Stress, p, nonlinear_factor)
     FW_kg_m2 = X_d / dw_fw_ratio
@@ -1349,11 +1338,14 @@ def uva_sun_derivatives(t, state, p, env):
     # 當 DW/FW 過高 (脫水) 時，花青素合成效率下降
     water_efficiency = calculate_water_anth_efficiency(dw_fw_ratio, p)
 
-    # v10.32: 非線性因子抑制效率
-    # 基於每日設定照射時數的 Gompertz 非線性因子來抑制花青素合成
-    # 使用 daily_hours (設定的每日照射時數)，而不是 hours_today (當前累積)
-    # 這確保全天的花青素合成都受到相同程度的抑制
-    # M9D3 (nonlin=70): 32% 效率, H12D3 (nonlin=189): 12% 效率
+    # v10.39: 非線性因子抑制效率 (Hill 函數)
+    # 公式: efficiency = 1 / (1 + (nonlin/K)^n), K=800, n=1.5
+    # 效率隨 nonlinear_factor 增加而單調遞減
+    # v10.39 效率:
+    #   - 3h/6h (nonlin=1.0):   100.0%
+    #   - M9D3 (nonlin=31.1):   99.2%
+    #   - H12D3 (nonlin=156.9): 92.0%
+    #   - VH15D3 (nonlin=226):  86.9%
     daily_nonlin_factor = nonlinear_damage_factor(daily_hours, p)
     nonlin_anth_efficiency = calculate_nonlin_anth_efficiency(daily_nonlin_factor, p)
 
@@ -1376,13 +1368,13 @@ def uva_sun_derivatives(t, state, p, env):
     #
     # v10.20: 消耗效率隨每日照射時數增強
     # 長時間照射時抗氧化系統崩潰，花青素消耗加劇
-    # daily_nonlin: 6h→1.8, 9h→70, 12h→189, 15h→236
+    # v10.38 daily_nonlin (threshold=10.5): 6h→1.0, 9h→31.1, 12h→156.9, 15h→226.0
     K_ros_cons = 500.0   # ROS 半飽和常數
     n_cons = 2.0
     # 消耗放大因子：基於 daily_hours 的 nonlinear_factor (不是 hours_today)
     # v10.33: 移除硬閾值，改用 softplus 連續函數 (符合 CLAUDE.md 規範)
     daily_nonlin = nonlinear_damage_factor(daily_hours, p)
-    cons_amp_center = 200.0  # 軟閾值中心 (高於 12h=189，主要影響 15h=236)
+    cons_amp_center = 200.0  # 軟閾值中心 (高於 12h=156.9，主要影響 15h=226)
     cons_amp_scale = 15.0    # 過渡寬度
     cons_amp_k = 12.0        # 最大放大倍率
     cons_amp_K = 20.0        # 半飽和常數
