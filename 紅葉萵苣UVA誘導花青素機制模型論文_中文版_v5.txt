@@ -927,6 +927,110 @@ plant_density
 
 plants/m²
 
+2.5.6 模型實作與輸出換算 (Model Implementation Details)
+
+為確保模型的完全可重現性，本節補充模型實作的關鍵細節，包含輔助函數、輸出換算公式、初始條件及數值求解器設定。
+
+**(1) Stress 生長抑制函數**
+
+方程式 (4) 中的 $Stress_{growth\_inhib}$ 採用 Michaelis-Menten 型飽和函數：
+
+$$Stress_{growth\_inhib} = \frac{\alpha_{inhib} \cdot Stress}{K_{stress} + Stress}$$
+
+其中 $\alpha_{inhib} = 0.85$（最大光合抑制比例），$K_{stress} = 50$（半飽和常數）。
+
+LAI 生長抑制採用相同形式，但 $\alpha_{LAI\_inhib} = 0.80$。
+
+**(2) 花青素合成的碳消耗**
+
+方程式 (3) 中的 $S_{anth}$ 表示花青素合成消耗的碳源，計算如下：
+
+$$S_{anth} = \frac{dAnth}{dt} \times C_{cost}$$
+
+其中 $C_{cost} = 10$ [kg C / kg Anth]，表示每合成 1 kg 花青素需消耗 10 kg 碳骨架（基於苯丙烷途徑的化學計量估算）。
+
+**(3) SLA 基礎值與衰老係數**
+
+方程式 (5) 中的 $SLA_{base}$ 繼承自 Sun et al. (2025) 模型的動態計算：
+
+$$SLA_{base} = SLA_{max} \times \exp(-k_{SLA} \times X_d)$$
+
+其中 $SLA_{max} = 0.1$ [m²/g]，$k_{SLA} = 0.5$ [m²/kg]。
+
+衰老係數 $k_{senescence}$ 隱含於 Sun 模型的 LAI 動態中，約為 $5 \times 10^{-7}$ [1/s]。
+
+**(4) UVA 照射時間函數**
+
+$I_{UVA}(t)$ 為分段常數函數，定義為：
+
+$$I_{UVA}(t) = \begin{cases}
+11 \text{ W/m}^2 & \text{if } Day_{start} \leq Day(t) \leq Day_{end} \text{ and } Hour_{on} \leq Hour(t) < Hour_{off} \\
+0 & \text{otherwise}
+\end{cases}$$
+
+各處理組的具體參數如表3b所示。例如 L6D6：$Day_{start}=29$，$Day_{end}=35$，$Hour_{on}=10$，$Hour_{off}=16$。
+
+**(5) DW/FW 比例計算 (LDMC)**
+
+模型模擬結束後，鮮重 (FW) 的計算需要 DW/FW 比例（亦稱 LDMC, Leaf Dry Matter Content）。此比例隨逆境程度動態變化：
+
+$$LDMC = LDMC_{base} \times (1 + \eta_{stress} \times \frac{Stress_{avg}}{K_{ldmc} + Stress_{avg}} \times f_{acute})$$
+
+其中：
+- $LDMC_{base} = 0.05$（健康植物基礎值）
+- $\eta_{stress} = 0.45$（Stress 敏感度）
+- $K_{ldmc} = 1400$（半飽和常數）
+- $Stress_{avg}$：UVA 照射期間的平均 Stress（非終點值）
+- $f_{acute}$：急性傷害因子，與 Gompertz 非線性因子連動
+
+急性傷害因子使用 softplus 軟閾值函數：
+
+$$f_{acute} = 1 + k_{acute} \times \frac{x^{n}}{K_{acute}^{n} + x^{n}}$$
+
+其中 $x = \text{softplus}((Nonlin - 50)/10) \times 10$，$k_{acute} = 9$，$K_{acute} = 120$，$n = 2$。
+
+最終 LDMC 上限為 0.080。
+
+**(6) 輸出換算公式**
+
+模擬終點狀態 $[X_d^*, C_{buf}^*, LAI^*, Anth^*, Stress^*, ROS^*]$ 換算為實驗可量測指標：
+
+**a. 結構乾重 → 單株鮮重 (g/plant)**：
+$$FW = \frac{X_d^*}{\rho_{plant} \times LDMC} \times 1000$$
+
+其中 $\rho_{plant} = 36$ [plants/m²] 為種植密度。
+
+**b. 花青素總量 → 花青素濃度 (ppm = mg/kg)**：
+$$Anth_{ppm} = \frac{Anth^*}{FW_{total}} \times 10^6$$
+
+其中 $FW_{total} = FW \times \rho_{plant} / 1000$ [kg/m²] 為單位面積總鮮重。
+
+**(7) 初始條件**
+
+模擬從播種後第 14 天（移植日）開始。六個狀態變量的初始值如下：
+
+| 狀態變量 | 初始值 | 計算方式 | 單位 |
+|----------|--------|----------|------|
+| $X_d(0)$ | 0.018 | $FW_{init} \times LDMC_{base} \times \rho_{plant} / 1000$ | kg/m² |
+| $C_{buf}(0)$ | 0.0018 | $X_d(0) \times 0.1$ | kg/m² |
+| $LAI(0)$ | 0.40 | $(FW_{init} \times LDMC_{base} / 0.01) \times 0.04$ | m²/m² |
+| $Anth(0)$ | $1.8 \times 10^{-6}$ | $5 \times FW_{total,init} / 10^6$ | kg/m² |
+| $Stress(0)$ | 0.0 | 初始無逆境 | - |
+| $ROS(0)$ | 0.0 | 初始無 UVA | - |
+
+其中 $FW_{init} = 10$ g/plant（移植時初始鮮重）。
+
+**(8) 數值求解器設定**
+
+| 設定項 | 數值 | 說明 |
+|--------|------|------|
+| 求解方法 | RK45 | Runge-Kutta 4(5) 階顯式法 |
+| 最大步長 | 300 秒 | 確保 UVA 開/關切換被正確捕捉 |
+| 時間單位 | 秒 (s) | 所有速率常數均以秒為單位 |
+| 模擬時段 | Day 14 至 Day 35 | 共 21 天，1,814,400 秒 |
+
+**程式碼可用性**：完整的 Python 實作程式碼 `simulate_uva_model_v10.py` 及參數設定檔 `model_config.py` 已於 GitHub 開源發布，網址為 [待填寫]。程式碼包含所有參數、輔助函數及驗證腳本，可直接執行重現本研究的所有模擬結果。
+
 2.6 統計分析
 
 實驗數據以平均值 ± SD (n=5) 表示。使用 SPSS 軟體進行 ANOVA 及 Tukey's HSD 事後檢定 (p < 0.05)。
