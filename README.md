@@ -7,6 +7,29 @@
 
 ---
 
+## About
+
+This repository provides a reproducible pipeline and mechanistic modeling code to analyze and optimize UVA lighting recipes for red-leaf lettuce grown in controlled-environment agriculture. The goal is to **enhance anthocyanin accumulation without yield loss** (fresh weight).
+
+The workflow consists of:
+
+1. **Screening stage**: comparing UVA vs. UVB across multiple cultivars to identify a "safe band" and a responsive cultivar.
+
+2. **Optimization stage**: exploring UVA photoperiod × duration combinations under a fixed irradiance and extrapolating responses via modeling and global search.
+
+At the core is a **six-state ODE mechanistic model** integrating UVA-driven morphogenesis, ROS production/clearance, damage–repair dynamics, ontogeny-dependent vulnerability, nonlinear amplification under long exposure, and circadian effects. Parameters are calibrated in a data-driven manner to reproduce endpoint fresh weight and anthocyanin outcomes and to capture non-monotonic (hormetic) responses.
+
+---
+
+## What You Can Do With This Repo
+
+- **Reproduce training/validation results** and summary tables
+- **Generate response surfaces / heatmaps** for UVA recipes
+- **Run constrained optimization** (e.g., FW ≥ CK − 5%) to identify candidate "best" recipes
+- **Adapt the framework** to other cultivars or environments (with re-calibration)
+
+---
+
 ## Model Performance (v10.39)
 
 **Perfect Score**: 12/12 targets achieved (Training 6/6 + Validation 6/6)
@@ -35,34 +58,24 @@
 
 ---
 
-## Core Parameters (v10.39)
+## Model Architecture
 
-### Gompertz Nonlinear Factor
-- threshold: 10.5 hours
-- max_factor: 250.0
-- steepness: 0.5
+### State Variables
 
-| Hours/Day | nonlinear_factor |
-|-----------|------------------|
-| 3h | 1.0 |
-| 6h | 1.0 |
-| 9h | 31.1 |
-| 12h | 156.9 |
-| 15h | 226.0 |
+Six-state ODE system: `[X_d, C_buf, LAI, Anth, Stress, ROS]`
 
-### Anthocyanin Efficiency Inhibition (Hill Function)
-- K = 800.0
-- n = 1.5
-- Formula: efficiency = 1 / (1 + (nonlin/K)^n)
+| Variable | Description | Unit |
+|----------|-------------|------|
+| X_d | Dry weight biomass | kg/m² |
+| C_buf | Carbon buffer | kg/m² |
+| LAI | Leaf Area Index | m²/m² |
+| Anth | Anthocyanin content | kg/m² |
+| Stress | Cumulative stress | - |
+| ROS | Reactive oxygen species | - |
 
----
+### Base Model
 
-## Core Features
-
-### Model Architecture
-
-- **Base Model**: Sun et al. (2025) lettuce growth model
-- **State Variables**: 6 `[X_d, C_buf, LAI, Anth, Stress, ROS]`
+- **Sun et al. (2025)** lettuce growth model
 - **ODE Solver**: RK45, max_step=300s
 
 ### UVA Effect Mechanisms
@@ -76,6 +89,41 @@
 7. **Anthocyanin Induction** - Stress-induced + UV direct induction
 8. **Water Inhibition** - Anthocyanin synthesis efficiency decreases under extreme stress
 9. **Hill Efficiency Inhibition** - Monotonically decreasing inhibition at high nonlinear_factor
+
+---
+
+## Core Parameters (v10.39)
+
+### Gompertz Nonlinear Factor
+
+```
+nonlinear_factor = 1 + max_factor × exp(-exp(-steepness × (hours - threshold)))
+```
+
+| Parameter | Value |
+|-----------|-------|
+| threshold | 10.5 hours |
+| max_factor | 250.0 |
+| steepness | 0.5 |
+
+| Hours/Day | nonlinear_factor |
+|-----------|------------------|
+| 3h | 1.0 |
+| 6h | 1.0 |
+| 9h | 31.1 |
+| 12h | 156.9 |
+| 15h | 226.0 |
+
+### Anthocyanin Efficiency Inhibition (Hill Function)
+
+```
+efficiency = 1 / (1 + (nonlinear_factor / K)^n)
+```
+
+| Parameter | Value |
+|-----------|-------|
+| K | 800.0 |
+| n | 1.5 |
 
 ---
 
@@ -136,9 +184,11 @@ python3 optimize_uva_strategy.py
 
 ## Citation
 
-If you use this model in your research, please cite:
+If you use this model in your research, please cite the associated manuscript and the repository:
 
-> Wei, C.H., Fang, W., & Huang, C.K. (2026). A Two-Stage Screening-to-Optimization Approach with Mechanistic Model Analysis: Enhancing Anthocyanin in Lettuce Without Yield Loss. [Manuscript in preparation]
+> Wei, C.H., Fang, W., & Huang, C.K. (2026). A Two-Stage Screening-to-Optimization Approach with Mechanistic Model Analysis: Enhancing Anthocyanin in Lettuce Without Yield Loss. *Plants* (under review).
+
+Repository: https://github.com/GrayWei444/uva-simulation
 
 ---
 
