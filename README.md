@@ -1,4 +1,4 @@
-# 萵苣 UVA 模型 v10.39
+# Lettuce UVA Model v10.39
 
 **A Mechanistic Model for UVA Effects on Lettuce Growth and Anthocyanin Accumulation**
 
@@ -7,14 +7,14 @@
 
 ---
 
-## 模型表現 (v10.39)
+## Model Performance (v10.39)
 
-**完美達標**: 12/12 目標達成 (訓練組 6/6 + 驗證組 6/6)
+**Perfect Score**: 12/12 targets achieved (Training 6/6 + Validation 6/6)
 
-### 訓練組 (允收誤差 5%)
+### Training Set (Tolerance: 5%)
 
-| 處理組 | FW預測 | FW觀測 | FW誤差 | Anth預測 | Anth觀測 | Anth誤差 |
-|--------|--------|--------|--------|----------|----------|----------|
+| Treatment | FW Pred | FW Obs | FW Error | Anth Pred | Anth Obs | Anth Error |
+|-----------|---------|--------|----------|-----------|----------|------------|
 | CK | 86.5g | 87.0g | -0.5% | 439 | 433 | +1.3% |
 | L6D6 | 92.5g | 91.4g | +1.2% | 474 | 494 | -4.0% |
 | L6D6-N | 84.0g | 80.8g | +3.9% | 475 | 493 | -3.6% |
@@ -22,10 +22,10 @@
 | L6D12 | 58.9g | 60.4g | -2.5% | 496 | 518 | -4.3% |
 | H12D3 | 61.3g | 60.6g | +1.2% | 651 | 651 | +0.0% |
 
-### 驗證組 (允收誤差 10%)
+### Validation Set (Tolerance: 10%)
 
-| 處理組 | 時數 | FW預測 | FW觀測 | FW誤差 | Anth預測 | Anth觀測 | Anth誤差 |
-|--------|------|--------|--------|--------|----------|----------|----------|
+| Treatment | Hours | FW Pred | FW Obs | FW Error | Anth Pred | Anth Obs | Anth Error |
+|-----------|-------|---------|--------|----------|-----------|----------|------------|
 | CK | 0h | 86.5g | 85.2g | +1.6% | 439 | 413 | +6.2% |
 | VL3D3 | 3h | 88.4g | 89.0g | -0.8% | 457 | 437 | +4.5% |
 | L6D3 | 6h | 89.9g | 92.2g | -2.5% | 473 | 468 | +1.1% |
@@ -35,92 +35,113 @@
 
 ---
 
-## 核心參數 (v10.39)
+## Core Parameters (v10.39)
 
-### Gompertz 非線性因子
+### Gompertz Nonlinear Factor
 - threshold: 10.5 hours
 - max_factor: 250.0
 - steepness: 0.5
 
-| 每日時數 | nonlinear_factor |
-|----------|------------------|
+| Hours/Day | nonlinear_factor |
+|-----------|------------------|
 | 3h | 1.0 |
 | 6h | 1.0 |
 | 9h | 31.1 |
 | 12h | 156.9 |
 | 15h | 226.0 |
 
-### 花青素效率抑制 (Hill 函數)
+### Anthocyanin Efficiency Inhibition (Hill Function)
 - K = 800.0
 - n = 1.5
-- 公式: efficiency = 1 / (1 + (nonlin/K)^n)
+- Formula: efficiency = 1 / (1 + (nonlin/K)^n)
 
 ---
 
-## 核心特色
+## Core Features
 
-### 模型架構
+### Model Architecture
 
-- **基礎模型**: Sun et al. (2025) 萵苣生長模型
-- **狀態變量**: 6 個 `[X_d, C_buf, LAI, Anth, Stress, ROS]`
-- **ODE求解器**: RK45, max_step=300s
+- **Base Model**: Sun et al. (2025) lettuce growth model
+- **State Variables**: 6 `[X_d, C_buf, LAI, Anth, Stress, ROS]`
+- **ODE Solver**: RK45, max_step=300s
 
-### UVA 效應機制
+### UVA Effect Mechanisms
 
-1. **UVA 形態效應** - UVA 促進 SLA 和 LAI 增長 (不直接疊加 PAR)
-2. **ROS 動態** - UVA 產生 ROS，抗氧化系統清除
-3. **Stress 損傷-衰減** - 累積損傷與自然衰減平衡
-4. **LAI 脆弱性** - 幼嫩植株更易受損
-5. **Gompertz 非線性** - 長時間照射觸發抗氧化系統崩潰
-6. **夜間節律損傷** - 夜間照射造成額外壓力
-7. **花青素誘導** - Stress 誘導 + UV 直接誘導
-8. **水分抑制** - 極端逆境下花青素合成效率下降
-9. **Hill 效率抑制** - 單調遞減抑制高 nonlinear_factor
+1. **UVA Morphological Effect** - UVA promotes SLA and LAI growth (does not directly add to PAR)
+2. **ROS Dynamics** - UVA generates ROS, antioxidant system clears it
+3. **Stress Damage-Decay** - Balance between cumulative damage and natural decay
+4. **LAI Vulnerability** - Young plants are more susceptible to damage
+5. **Gompertz Nonlinearity** - Prolonged irradiation triggers antioxidant system collapse
+6. **Circadian Damage** - Nighttime irradiation causes additional stress
+7. **Anthocyanin Induction** - Stress-induced + UV direct induction
+8. **Water Inhibition** - Anthocyanin synthesis efficiency decreases under extreme stress
+9. **Hill Efficiency Inhibition** - Monotonically decreasing inhibition at high nonlinear_factor
 
 ---
 
-## 檔案結構
+## File Structure
 
 ```
 .
-├── simulate_uva_model_v10.py     # 主模型程式 (v10.39)
-├── model_config.py               # 處理組設定與目標值
-├── CLAUDE.md                     # 開發守則 (v3.0)
-├── HANDOFF_STATUS.md             # 交接狀態
-├── MODEL_DESIGN_NOTES.md         # 模型設計筆記
-├── generate_paper_figures.py     # 論文圖表生成
-├── optimize_uva_strategy.py      # 優化腳本 (uva_intensity=11 W/m²)
-└── 紅葉萵苣UVA...論文_v5.txt     # 中文論文
+├── simulate_uva_model_v10.py          # Main model (v10.39)
+├── lettuce_uva_carbon_complete_model.py  # Sun model base
+├── model_config.py                    # Treatment configurations and targets
+├── generate_paper_figures.py          # Paper figure generation
+├── generate_fig20_quick.py            # Quick optimization heatmap
+├── optimize_uva_strategy.py           # Optimization script (11 W/m²)
+├── CLAUDE.md                          # Development guidelines (v3.0)
+├── HANDOFF_STATUS.md                  # Handoff status
+└── MODEL_DESIGN_NOTES.md              # Model design notes
 ```
 
 ---
 
-## 快速開始
+## Quick Start
 
-### 安裝
+### Installation
 
 ```bash
 pip install numpy scipy matplotlib
 ```
 
-### 運行模擬
+### Run Simulation
 
 ```bash
 python3 simulate_uva_model_v10.py
 ```
 
+### Generate Paper Figures
+
+```bash
+python3 generate_paper_figures.py
+```
+
+### Run Optimization
+
+```bash
+python3 optimize_uva_strategy.py
+```
+
 ---
 
-## 版本歷史
+## Version History
 
-- **v10.39**: 單調遞減 Hill 效率函數 (K=800, n=1.5)
+- **v10.39**: Monotonically decreasing Hill efficiency function (K=800, n=1.5)
 - **v10.37**: Gompertz threshold 9.5→10.5
-- **v10.33**: 連續非對稱高斯 (已移除)
-- **v10.9**: 水分抑制機制
-- **v10.0**: UVA 形態效應取代直接 PAR 疊加
+- **v10.33**: Continuous asymmetric Gaussian (removed)
+- **v10.9**: Water inhibition mechanism
+- **v10.0**: UVA morphological effect replaces direct PAR addition
 
 ---
 
-## 參考文獻
+## Citation
 
-詳見 `紅葉萵苣UVA誘導花青素機制模型論文_中文版_v5.txt`
+If you use this model in your research, please cite:
+
+> Wei, C.H., Fang, W., & Huang, C.K. (2026). A Two-Stage Screening-to-Optimization Approach with Mechanistic Model Analysis: Enhancing Anthocyanin in Lettuce Without Yield Loss. [Manuscript in preparation]
+
+---
+
+## License
+
+This project is for academic research purposes.

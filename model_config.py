@@ -1,33 +1,34 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-萵苣UVA模型共用設定 (Shared Configuration Module)
+Lettuce UVA Model Shared Configuration Module
 ================================================================================
-版本: v2.0
-日期: 2025-12-05
+Version: v2.0
+Date: 2025-12-05
 
-功能說明:
+Description:
 ---------
-此模組集中管理所有腳本共用的設定，避免各檔案重複定義導致不同步。
-包含:
-  1. 環境基礎設定 (植物工廠環境)
-  2. 處理組設定 (UVA照射時間和強度)
-  3. 實驗目標數據 (觀測值)
-  4. 資料集分割 (訓練/驗證/測試)
-  5. ODE求解器設定
-  6. 模擬設定
-  7. 夜間抑制參數先驗區間
+This module centralizes all shared configuration settings to avoid
+desynchronization caused by repeated definitions across different files.
+Includes:
+  1. Environmental base settings (plant factory environment)
+  2. Treatment group configurations (UVA irradiation time and intensity)
+  3. Experimental target data (observed values)
+  4. Dataset split (training/validation/test)
+  5. ODE solver settings
+  6. Simulation settings
+  7. Night inhibition parameter prior ranges
 
-用法:
+Usage:
 -----
     from model_config import ENV_BASE, TREATMENT_CONFIGS, TARGETS, ODE_SETTINGS
 
-注意事項:
+Notes:
 ---------
-  - ODE求解器設定 (RK45, max_step=60) 已校準，請勿修改!
-  - 修改任何設定後請重新執行 run_validation.py 確認結果
+  - ODE solver settings (RK45, max_step=60) have been calibrated, do not modify!
+  - After modifying any settings, please re-run run_validation.py to verify results
 
-依賴腳本:
+Dependent scripts:
 ---------
   - simulate_uva_model.py
   - run_validation.py
@@ -38,113 +39,113 @@
 """
 
 # ==============================================================================
-# 第一部分: 環境基礎設定 (植物工廠環境)
+# Part 1: Environmental Base Settings (Plant Factory Environment)
 # ==============================================================================
 ENV_BASE = {
-    # --- 光照設定 ---
-    'light_on_hour': 6,       # 光照開始時間 (06:00)
-    'light_off_hour': 22,     # 光照結束時間 (22:00) - 共16小時光照
-    # PPFD 130 μmol/m²/s → PAR功率 = 130 × 0.219 = 28.5 W/m²
-    # Sun模型假設 PAR = 0.5 × I，因此等效短波輻射 I = 28.5 / 0.5 = 57 W/m²
-    'I_day': 57,              # 日間短波輻射 [W/m²] (物理計算值)
+    # --- Light settings ---
+    'light_on_hour': 6,       # Light start time (06:00)
+    'light_off_hour': 22,     # Light end time (22:00) - 16 hours of light total
+    # PPFD 130 μmol/m²/s → PAR power = 130 × 0.219 = 28.5 W/m²
+    # Sun model assumes PAR = 0.5 × I, so equivalent shortwave radiation I = 28.5 / 0.5 = 57 W/m²
+    'I_day': 57,              # Daytime shortwave radiation [W/m²] (physically calculated value)
 
-    # --- 溫度設定 ---
-    'T_day': 25,              # 日間溫度 [°C]
-    'T_night': 18,            # 夜間溫度 [°C]
+    # --- Temperature settings ---
+    'T_day': 25,              # Daytime temperature [°C]
+    'T_night': 18,            # Nighttime temperature [°C]
 
-    # --- CO2設定 ---
-    'CO2_day': 1200,          # 日間CO2濃度 [ppm] (Sun模型校準值)
-    'CO2_night': 1200,        # 夜間CO2濃度 [ppm]
+    # --- CO2 settings ---
+    'CO2_day': 1200,          # Daytime CO2 concentration [ppm] (Sun model calibrated value)
+    'CO2_night': 1200,        # Nighttime CO2 concentration [ppm]
 
-    # --- 濕度設定 ---
-    'RH_day': 0.70,           # 日間相對濕度 [0-1]
-    'RH_night': 0.85,         # 夜間相對濕度 [0-1]
+    # --- Humidity settings ---
+    'RH_day': 0.70,           # Daytime relative humidity [0-1]
+    'RH_night': 0.85,         # Nighttime relative humidity [0-1]
 
-    # --- 種植密度 ---
-    'plant_density': 36,      # 種植密度 [株/m²]
+    # --- Plant density ---
+    'plant_density': 36,      # Plant density [plants/m²]
 }
 
 
 # ==============================================================================
-# 第二部分: 處理組設定
+# Part 2: Treatment Group Configurations
 # ==============================================================================
-# 說明:
-# - uva_start_day / uva_end_day: 播種後的天數
-# - uva_hour_on / uva_hour_off: 每日UVA照射的開始/結束時間
-# - 模擬從播種後第14天(移植日)開始，共21天，到播種後第35天結束
+# Description:
+# - uva_start_day / uva_end_day: Days after sowing
+# - uva_hour_on / uva_hour_off: Daily UVA irradiation start/end time
+# - Simulation starts from day 14 after sowing (transplant day), lasts 21 days, ends on day 35
 
 TREATMENT_CONFIGS = {
-    # --- 對照組 ---
+    # --- Control group ---
     'CK': {
         'uva_on': False,
-        'description': '對照組 (無UVA)',
+        'description': 'Control group (no UVA)',
     },
 
-    # --- 標準日間照射 (最佳處理) ---
+    # --- Standard daytime irradiation (optimal treatment) ---
     'L6D6': {
         'uva_on': True,
-        'uva_intensity': 11.0,          # UVA強度 [W/m²] (v10.7: 實際LED功率)
-        'uva_start_day': 29,            # 播種後第29天開始
-        'uva_end_day': 35,              # 播種後第35天結束 (共6天)
-        'uva_hour_on': 10,              # 10:00 開始
-        'uva_hour_off': 16,             # 16:00 結束 (日間6小時)
-        'description': '低劑量日間 (6h/day, 6天)',
+        'uva_intensity': 11.0,          # UVA intensity [W/m²] (v10.7: actual LED power)
+        'uva_start_day': 29,            # Start on day 29 after sowing
+        'uva_end_day': 35,              # End on day 35 after sowing (6 days total)
+        'uva_hour_on': 10,              # Start at 10:00
+        'uva_hour_off': 16,             # End at 16:00 (6 hours daytime)
+        'description': 'Low dose daytime (6h/day, 6 days)',
     },
 
-    # --- 夜間照射 (生理節律打斷效應) ---
+    # --- Nighttime irradiation (circadian rhythm disruption effect) ---
     'L6D6-N': {
         'uva_on': True,
-        'uva_intensity': 11.0,          # v10.7: 實際LED功率
+        'uva_intensity': 11.0,          # v10.7: actual LED power
         'uva_start_day': 29,
         'uva_end_day': 35,
-        'uva_hour_on': 22,              # 22:00 開始
-        'uva_hour_off': 4,              # 04:00 結束 (夜間跨夜6小時)
-        'description': '低劑量夜間 (6h/night, 6天)',
+        'uva_hour_on': 22,              # Start at 22:00
+        'uva_hour_off': 4,              # End at 04:00 (6 hours overnight)
+        'description': 'Low dose nighttime (6h/night, 6 days)',
     },
 
-    # --- 高劑量脅迫 (損傷機制) ---
+    # --- High dose stress (damage mechanism) ---
     'H12D3': {
         'uva_on': True,
-        'uva_intensity': 11.0,          # v10.7: 實際LED功率
-        'uva_start_day': 32,            # 播種後第32天開始
-        'uva_end_day': 35,              # 播種後第35天結束 (共3天)
-        'uva_hour_on': 6,               # 06:00 開始
-        'uva_hour_off': 18,             # 18:00 結束 (12小時)
-        'description': '高劑量脅迫 (12h/day, 3天)',
+        'uva_intensity': 11.0,          # v10.7: actual LED power
+        'uva_start_day': 32,            # Start on day 32 after sowing
+        'uva_end_day': 35,              # End on day 35 after sowing (3 days total)
+        'uva_hour_on': 6,               # Start at 06:00
+        'uva_hour_off': 18,             # End at 18:00 (12 hours)
+        'description': 'High dose stress (12h/day, 3 days)',
     },
 
-    # --- 極低劑量長期 (適應效應) ---
+    # --- Very low dose long-term (adaptation effect) ---
     'VL3D12': {
         'uva_on': True,
-        'uva_intensity': 11.0,          # v10.7: 實際LED功率
-        'uva_start_day': 23,            # 播種後第23天開始
-        'uva_end_day': 35,              # 播種後第35天結束 (共12天)
-        'uva_hour_on': 10,              # 10:00 開始
-        'uva_hour_off': 13,             # 13:00 結束 (3小時)
-        'description': '極低劑量長期 (3h/day, 12天)',
+        'uva_intensity': 11.0,          # v10.7: actual LED power
+        'uva_start_day': 23,            # Start on day 23 after sowing
+        'uva_end_day': 35,              # End on day 35 after sowing (12 days total)
+        'uva_hour_on': 10,              # Start at 10:00
+        'uva_hour_off': 13,             # End at 13:00 (3 hours)
+        'description': 'Very low dose long-term (3h/day, 12 days)',
     },
 
-    # --- 低劑量長期 (形態效應主導) ---
+    # --- Low dose long-term (morphological effect dominant) ---
     'L6D12': {
         'uva_on': True,
-        'uva_intensity': 11.0,          # v10.7: 實際LED功率
+        'uva_intensity': 11.0,          # v10.7: actual LED power
         'uva_start_day': 23,
         'uva_end_day': 35,
         'uva_hour_on': 10,
         'uva_hour_off': 16,
-        'description': '低劑量長期 (6h/day, 12天) - 形態效應累積',
+        'description': 'Low dose long-term (6h/day, 12 days) - morphological effect accumulation',
     },
 
     # ==========================================================================
-    # 驗證組 (3天梯度實驗 - Day 32-35)
+    # Validation group (3-day gradient experiment - Day 32-35)
     # ==========================================================================
-    # 驗證對照組 (與訓練組 CK 相同設定，但獨立觀測值)
+    # Validation control group (same settings as training CK, but independent observed values)
     'CK_val': {
         'uva_on': False,
-        'description': '驗證對照組 (無UVA)',
+        'description': 'Validation control group (no UVA)',
     },
 
-    # 極低日劑量 3天
+    # Very low daily dose 3 days
     'VL3D3': {
         'uva_on': True,
         'uva_intensity': 11.0,
@@ -152,10 +153,10 @@ TREATMENT_CONFIGS = {
         'uva_end_day': 35,
         'uva_hour_on': 10,
         'uva_hour_off': 13,             # 3h/day
-        'description': '極低日劑量 (3h/day, 3天)',
+        'description': 'Very low daily dose (3h/day, 3 days)',
     },
 
-    # 低日劑量 3天
+    # Low daily dose 3 days
     'L6D3': {
         'uva_on': True,
         'uva_intensity': 11.0,
@@ -163,10 +164,10 @@ TREATMENT_CONFIGS = {
         'uva_end_day': 35,
         'uva_hour_on': 10,
         'uva_hour_off': 16,             # 6h/day
-        'description': '低日劑量 (6h/day, 3天)',
+        'description': 'Low daily dose (6h/day, 3 days)',
     },
 
-    # 中日劑量 3天
+    # Medium daily dose 3 days
     'M9D3': {
         'uva_on': True,
         'uva_intensity': 11.0,
@@ -174,10 +175,10 @@ TREATMENT_CONFIGS = {
         'uva_end_day': 35,
         'uva_hour_on': 7,
         'uva_hour_off': 16,             # 9h/day
-        'description': '中日劑量 (9h/day, 3天)',
+        'description': 'Medium daily dose (9h/day, 3 days)',
     },
 
-    # 高日劑量 3天 (驗證組 - 與訓練組 H12D3 設定相同但獨立觀測值)
+    # High daily dose 3 days (validation group - same settings as training H12D3 but independent observed values)
     'H12D3_val': {
         'uva_on': True,
         'uva_intensity': 11.0,
@@ -185,10 +186,10 @@ TREATMENT_CONFIGS = {
         'uva_end_day': 35,
         'uva_hour_on': 6,
         'uva_hour_off': 18,             # 12h/day
-        'description': '高日劑量 (12h/day, 3天) - 驗證組',
+        'description': 'High daily dose (12h/day, 3 days) - validation group',
     },
 
-    # 極高日劑量 3天
+    # Very high daily dose 3 days
     'VH15D3': {
         'uva_on': True,
         'uva_intensity': 11.0,
@@ -196,76 +197,76 @@ TREATMENT_CONFIGS = {
         'uva_end_day': 35,
         'uva_hour_on': 5,
         'uva_hour_off': 20,             # 15h/day
-        'description': '極高日劑量 (15h/day, 3天)',
+        'description': 'Very high daily dose (15h/day, 3 days)',
     },
 
-    # --- 正弦波漸進照射 (動態模式) ---
-    # 照射強度隨時間呈正弦波變化，從0漸增到最大值再降至0
-    # 週期12小時 (06:00-18:00)，總有效劑量相當於6小時連續照射
+    # --- Sinusoidal gradual irradiation (dynamic mode) ---
+    # Irradiation intensity varies sinusoidally with time, from 0 to max then back to 0
+    # Period 12 hours (06:00-18:00), total effective dose equivalent to 6 hours continuous irradiation
     'SIN': {
         'uva_on': True,
-        'uva_mode': 'sinusoidal',        # 動態照射模式
-        'uva_intensity': 22.0,           # 最大強度 [W/m²]
-        'uva_start_day': 23,             # 播種後第23天開始
-        'uva_end_day': 35,               # 播種後第35天結束 (共12天)
-        'uva_hour_on': 6,                # 06:00 開始
-        'uva_hour_off': 18,              # 18:00 結束 (12小時週期)
-        'description': '正弦波漸進照射 (6h等效/day, 12天)',
+        'uva_mode': 'sinusoidal',        # Dynamic irradiation mode
+        'uva_intensity': 22.0,           # Maximum intensity [W/m²]
+        'uva_start_day': 23,             # Start on day 23 after sowing
+        'uva_end_day': 35,               # End on day 35 after sowing (12 days total)
+        'uva_hour_on': 6,                # Start at 06:00
+        'uva_hour_off': 18,              # End at 18:00 (12 hour period)
+        'description': 'Sinusoidal gradual irradiation (6h equivalent/day, 12 days)',
     },
 
-    # --- 間歇式照射 (動態模式) ---
-    # 30分鐘開/30分鐘關，總計6小時有效照射分散在12小時內
+    # --- Intermittent irradiation (dynamic mode) ---
+    # 30 minutes on/30 minutes off, total 6 hours effective irradiation distributed over 12 hours
     'INT': {
         'uva_on': True,
-        'uva_mode': 'intermittent',      # 動態照射模式
-        'uva_intensity': 22.0,           # 照射時強度 [W/m²]
-        'uva_start_day': 23,             # 播種後第23天開始
-        'uva_end_day': 35,               # 播種後第35天結束 (共12天)
-        'uva_hour_on': 6,                # 06:00 開始
-        'uva_hour_off': 18,              # 18:00 結束
-        'intermittent_on_min': 30,       # 開啟時間 [分鐘]
-        'intermittent_off_min': 30,      # 關閉時間 [分鐘]
-        'description': '間歇式照射 (30min開/關, 6h等效/day, 12天)',
+        'uva_mode': 'intermittent',      # Dynamic irradiation mode
+        'uva_intensity': 22.0,           # Intensity during irradiation [W/m²]
+        'uva_start_day': 23,             # Start on day 23 after sowing
+        'uva_end_day': 35,               # End on day 35 after sowing (12 days total)
+        'uva_hour_on': 6,                # Start at 06:00
+        'uva_hour_off': 18,              # End at 18:00
+        'intermittent_on_min': 30,       # On duration [minutes]
+        'intermittent_off_min': 30,      # Off duration [minutes]
+        'description': 'Intermittent irradiation (30min on/off, 6h equivalent/day, 12 days)',
     },
 }
 
 
 # ==============================================================================
-# 第三部分: 實驗目標數據 (觀測值)
+# Part 3: Experimental Target Data (Observed Values)
 # ==============================================================================
-# 單位說明:
-# - FW: 鮮重 [g/plant]
-# - Anth: 花青素濃度 [ppm = mg/kg FW]
+# Unit description:
+# - FW: Fresh Weight [g/plant]
+# - Anth: Anthocyanin concentration [ppm = mg/kg FW]
 
 TARGETS = {
-    # 數據更新 (2026-01-09)
-    # 鮮重 (g/plant):
+    # Data update (2026-01-09)
+    # Fresh weight (g/plant):
     #   Ref=87, 6h/6d(D)=91.4, 6h/6d(N)=80.8, 12h/3d=60.6, 3h/12d=67, 6h/12d=60.4
-    # 花青素濃度 (ppm = mg/kg FW):
-    #   單位已更正: 原 mg/100g → 現 mg/kg (×10)
+    # Anthocyanin concentration (ppm = mg/kg FW):
+    #   Unit corrected: original mg/100g → now mg/kg (×10)
     'CK': {'FW': 87.0, 'Anth': 433.0},       # Anth STD: 9.6
     'L6D6': {'FW': 91.4, 'Anth': 494.0},     # Anth STD: 6.8
     'L6D6-N': {'FW': 80.8, 'Anth': 493.0},   # Anth STD: 7.4
     'H12D3': {'FW': 60.6, 'Anth': 651.0},    # Anth STD: 14.6
     'VL3D12': {'FW': 67.0, 'Anth': 482.0},   # Anth STD: 2.7
     'L6D12': {'FW': 60.4, 'Anth': 518.0},    # Anth STD: 3.4
-    # --- 驗證組 (3天梯度實驗) ---
-    'CK_val': {'FW': 85.2, 'Anth': 413.0},    # 驗證對照組
+    # --- Validation group (3-day gradient experiment) ---
+    'CK_val': {'FW': 85.2, 'Anth': 413.0},    # Validation control group
     'VL3D3': {'FW': 89.0, 'Anth': 437.0},     # 3h/day × 3d
     'L6D3': {'FW': 92.2, 'Anth': 468.0},      # 6h/day × 3d
     'M9D3': {'FW': 83.8, 'Anth': 539.0},      # 9h/day × 3d
-    'H12D3_val': {'FW': 62.2, 'Anth': 657.0}, # 12h/day × 3d (驗證組)
+    'H12D3_val': {'FW': 62.2, 'Anth': 657.0}, # 12h/day × 3d (validation group)
     'VH15D3': {'FW': 51.3, 'Anth': 578.0},    # 15h/day × 3d
 }
 
 
 # ==============================================================================
-# 第四部分: 資料集分割 (訓練/驗證/測試)
+# Part 4: Dataset Split (Training/Validation/Test)
 # ==============================================================================
-# 說明:
-# - 訓練集: 用於參數估計 (6 組)
-# - 驗證集: 用於 3 天梯度實驗驗證 (6 組)
-# - 測試集: SIN, INT (動態模式，尚未實現)
+# Description:
+# - Training set: Used for parameter estimation (6 groups)
+# - Validation set: Used for 3-day gradient experiment validation (6 groups)
+# - Test set: SIN, INT (dynamic modes, not yet implemented)
 
 DATASET_SPLIT = {
     'train': ['CK', 'L6D6', 'L6D6-N', 'H12D3', 'VL3D12', 'L6D12'],
@@ -275,32 +276,32 @@ DATASET_SPLIT = {
 
 
 # ==============================================================================
-# 第五部分: ODE求解器設定 (重要: 請勿修改!)
+# Part 5: ODE Solver Settings (Important: Do not modify!)
 # ==============================================================================
-# 說明:
-# - method='RK45' 和 max_step=60 已校準，修改會導致結果不一致
-# - LSODA 在不同步長下結果不穩定，故使用 RK45
+# Description:
+# - method='RK45' and max_step=60 have been calibrated, modifying will cause inconsistent results
+# - LSODA produces unstable results at different step sizes, so RK45 is used
 
 ODE_SETTINGS = {
-    'method': 'RK45',         # 求解器方法 (不要改!)
-    'max_step': 60,           # 最大步長 [秒] (不要改!)
+    'method': 'RK45',         # Solver method (do not change!)
+    'max_step': 60,           # Maximum step size [seconds] (do not change!)
 }
 
 
 # ==============================================================================
-# 第六部分: 模擬設定
+# Part 6: Simulation Settings
 # ==============================================================================
 SIMULATION = {
-    'days': 21,               # 模擬天數 (移植後0-21天)
-    'transplant_offset': 14,  # 移植偏移 (播種後14天移植)
-    'initial_fw_g': 10,       # 移植時初始鮮重 [g/plant]
+    'days': 21,               # Simulation days (0-21 days after transplant)
+    'transplant_offset': 14,  # Transplant offset (transplant on day 14 after sowing)
+    'initial_fw_g': 10,       # Initial fresh weight at transplant [g/plant]
 }
 
 
 # ==============================================================================
-# 第七部分: 夜間抑制參數先驗區間 (基於文獻)
+# Part 7: Night Inhibition Parameter Prior Ranges (Based on Literature)
 # ==============================================================================
-# 參考文獻:
+# References:
 # - Bennie et al. (2016) J. Ecology DOI: 10.1111/1365-2745.12551
 # - Deng et al. (2025) Biology DOI: 10.3390/biology14050571
 # - Harmer (2009) Annu. Rev. Plant Biol.
@@ -309,24 +310,24 @@ SIMULATION = {
 NIGHT_INHIBITION_SCENARIOS = {
     'Low': {
         'night_uva_base_inhibition': 0.08,
-        'circadian_inhibition_decay': 3.2e-5,  # 半衰期約6小時
-        'description': '低抑制情境 (快速恢復)',
+        'circadian_inhibition_decay': 3.2e-5,  # Half-life approximately 6 hours
+        'description': 'Low inhibition scenario (fast recovery)',
     },
     'Medium': {
         'night_uva_base_inhibition': 0.12,
-        'circadian_inhibition_decay': 1.6e-5,  # 半衰期約12小時
-        'description': '中等抑制情境 (文獻中值)',
+        'circadian_inhibition_decay': 1.6e-5,  # Half-life approximately 12 hours
+        'description': 'Medium inhibition scenario (literature median)',
     },
     'High': {
         'night_uva_base_inhibition': 0.18,
-        'circadian_inhibition_decay': 8.0e-6,  # 半衰期約24小時
-        'description': '高抑制情境 (慢速恢復)',
+        'circadian_inhibition_decay': 8.0e-6,  # Half-life approximately 24 hours
+        'description': 'High inhibition scenario (slow recovery)',
     },
 }
 
 
 # ==============================================================================
-# 第八部分: 參數先驗範圍 (用於敏感度分析和優化)
+# Part 8: Parameter Prior Ranges (For Sensitivity Analysis and Optimization)
 # ==============================================================================
 PARAM_PRIORS = {
     'night_uva_base_inhibition': {
@@ -357,24 +358,24 @@ PARAM_PRIORS = {
 
 
 # ==============================================================================
-# 輔助函數
+# Utility Functions
 # ==============================================================================
 
 def get_env_for_treatment(treatment: str) -> dict:
     """
-    取得特定處理組的完整環境設定
+    Get the complete environment settings for a specific treatment group.
 
-    合併 ENV_BASE 和 TREATMENT_CONFIGS 中的設定。
+    Merges settings from ENV_BASE and TREATMENT_CONFIGS.
 
-    參數:
-    -----
+    Parameters:
+    -----------
     treatment : str
-        處理組代碼 (如 'CK', 'L6D6' 等)
+        Treatment group code (e.g., 'CK', 'L6D6', etc.)
 
-    回傳:
-    -----
+    Returns:
+    --------
     dict
-        完整的環境設定字典
+        Complete environment settings dictionary
     """
     env = ENV_BASE.copy()
     if treatment in TREATMENT_CONFIGS:
@@ -384,74 +385,74 @@ def get_env_for_treatment(treatment: str) -> dict:
 
 def get_target(treatment: str) -> dict:
     """
-    取得特定處理組的目標值
+    Get the target values for a specific treatment group.
 
-    參數:
-    -----
+    Parameters:
+    -----------
     treatment : str
-        處理組代碼
+        Treatment group code
 
-    回傳:
-    -----
+    Returns:
+    --------
     dict
-        目標值字典 {'FW': float, 'Anth': float}
+        Target values dictionary {'FW': float, 'Anth': float}
     """
     return TARGETS.get(treatment, {'FW': 0, 'Anth': 0})
 
 
 def get_treatments_by_dataset(dataset: str) -> list:
     """
-    取得特定資料集的處理組列表
+    Get the list of treatment groups for a specific dataset.
 
-    參數:
-    -----
+    Parameters:
+    -----------
     dataset : str
-        資料集名稱 ('train', 'validation', 'test')
+        Dataset name ('train', 'validation', 'test')
 
-    回傳:
-    -----
+    Returns:
+    --------
     list
-        處理組代碼列表
+        List of treatment group codes
     """
     return DATASET_SPLIT.get(dataset, [])
 
 
 def print_config_summary():
     """
-    印出設定摘要
+    Print configuration summary.
 
-    用於快速檢視當前模型設定。
+    Used for quickly reviewing current model settings.
     """
     print("=" * 70)
-    print("萵苣UVA模型設定摘要")
+    print("Lettuce UVA Model Configuration Summary")
     print("=" * 70)
 
-    print("\n環境設定:")
-    print(f"  光照: {ENV_BASE['light_on_hour']}:00-{ENV_BASE['light_off_hour']}:00, "
-          f"{ENV_BASE['I_day']} μmol/m²/s")
-    print(f"  溫度: 日間{ENV_BASE['T_day']}°C / 夜間{ENV_BASE['T_night']}°C")
-    print(f"  CO2: 日間{ENV_BASE['CO2_day']} / 夜間{ENV_BASE['CO2_night']} ppm")
-    print(f"  種植密度: {ENV_BASE['plant_density']} 株/m²")
+    print("\nEnvironment Settings:")
+    print(f"  Light: {ENV_BASE['light_on_hour']}:00-{ENV_BASE['light_off_hour']}:00, "
+          f"{ENV_BASE['I_day']} W/m²")
+    print(f"  Temperature: Daytime {ENV_BASE['T_day']}°C / Nighttime {ENV_BASE['T_night']}°C")
+    print(f"  CO2: Daytime {ENV_BASE['CO2_day']} / Nighttime {ENV_BASE['CO2_night']} ppm")
+    print(f"  Plant density: {ENV_BASE['plant_density']} plants/m²")
 
-    print("\n處理組:")
+    print("\nTreatment Groups:")
     for name, config in TREATMENT_CONFIGS.items():
         target = TARGETS.get(name, {})
         print(f"  {name}: {config.get('description', '')}")
         if target:
-            print(f"       目標: FW={target['FW']}g, Anth={target['Anth']}ppm")
+            print(f"       Target: FW={target['FW']}g, Anth={target['Anth']}ppm")
 
-    print("\n資料集分割:")
-    print(f"  訓練集: {DATASET_SPLIT['train']}")
-    print(f"  驗證集: {DATASET_SPLIT['validation']}")
-    print(f"  測試集: {DATASET_SPLIT['test']} (尚未實現)")
+    print("\nDataset Split:")
+    print(f"  Training set: {DATASET_SPLIT['train']}")
+    print(f"  Validation set: {DATASET_SPLIT['validation']}")
+    print(f"  Test set: {DATASET_SPLIT['test']} (not yet implemented)")
 
-    print("\nODE設定:")
-    print(f"  方法: {ODE_SETTINGS['method']}")
-    print(f"  最大步長: {ODE_SETTINGS['max_step']} 秒")
+    print("\nODE Settings:")
+    print(f"  Method: {ODE_SETTINGS['method']}")
+    print(f"  Max step: {ODE_SETTINGS['max_step']} seconds")
 
-    print("\n模擬設定:")
-    print(f"  模擬天數: {SIMULATION['days']} 天")
-    print(f"  初始鮮重: {SIMULATION['initial_fw_g']} g/plant")
+    print("\nSimulation Settings:")
+    print(f"  Simulation days: {SIMULATION['days']} days")
+    print(f"  Initial fresh weight: {SIMULATION['initial_fw_g']} g/plant")
 
     print("=" * 70)
 

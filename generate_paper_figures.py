@@ -1,6 +1,6 @@
 """
-生成論文圖 9-18：模型機制圖表
-v10.39 版本 - Hill 效率函數取代 sigmoid
+Generate Paper Figures 9-18: Model Mechanism Charts
+v10.39 Version - Hill efficiency function replaces sigmoid
 """
 
 import numpy as np
@@ -8,11 +8,11 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from scipy.integrate import solve_ivp
 
-# 設定字體
+# Font settings
 rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial Unicode MS', 'sans-serif']
 rcParams['axes.unicode_minus'] = False
 
-# 導入模型
+# Import model
 from simulate_uva_model_v10 import (
     UVAParams, uva_sun_derivatives, calculate_dynamic_dw_fw_ratio,
     nonlinear_damage_factor, calculate_nonlin_anth_efficiency
@@ -21,11 +21,11 @@ from model_config import ENV_BASE, TARGETS, SIMULATION, get_env_for_treatment
 
 
 def run_simulation(treatment_name):
-    """執行單次模擬並返回結果"""
+    """Run a single simulation and return results"""
     p = UVAParams()
     env = get_env_for_treatment(treatment_name)
 
-    # 初始條件
+    # Initial conditions
     fw_init_g = SIMULATION['initial_fw_g']
     dw_init_g = fw_init_g * p.dw_fw_ratio_base
     Xd_init = dw_init_g / 1000 * ENV_BASE['plant_density']
@@ -36,13 +36,13 @@ def run_simulation(treatment_name):
 
     initial_state = [Xd_init, C_buf_init, LAI_init, Anth_init, 0.0, 0.0]
 
-    # 時間設定
+    # Time settings
     transplant_day = SIMULATION['transplant_offset']
     simulation_days = SIMULATION['days']
     t_start = transplant_day * 86400
     t_end = (transplant_day + simulation_days) * 86400
 
-    # 求解 ODE
+    # Solve ODE
     sol = solve_ivp(
         uva_sun_derivatives,
         (t_start, t_end),
@@ -55,10 +55,10 @@ def run_simulation(treatment_name):
     if not sol.success:
         return None
 
-    # 提取結果
+    # Extract results
     Xd_f, Cbuf_f, LAI_f, Anth_f, Stress_f, ROS_f = sol.y[:, -1]
 
-    # 計算平均 Stress
+    # Calculate average Stress
     uva_start_day = env.get('uva_start_day', 29)
     uva_start = uva_start_day * 86400
     stress_sum = 0
@@ -69,7 +69,7 @@ def run_simulation(treatment_name):
             stress_count += 1
     avg_stress = stress_sum / max(1, stress_count)
 
-    # 計算 nonlinear_factor
+    # Calculate nonlinear_factor
     uva_hour_on = env.get('uva_hour_on', 0)
     uva_hour_off = env.get('uva_hour_off', 0)
     if env.get('uva_on', False):
@@ -96,12 +96,12 @@ def run_simulation(treatment_name):
 
 
 def run_simulation_with_history(env_config, description=""):
-    """執行 ODE 模擬並返回完整的時間序列"""
+    """Run ODE simulation and return full time series"""
     p = UVAParams()
     env = ENV_BASE.copy()
     env.update(env_config)
 
-    # 初始條件
+    # Initial conditions
     fw_init_g = SIMULATION['initial_fw_g']
     dw_init_g = fw_init_g * p.dw_fw_ratio_base
     Xd_init = dw_init_g / 1000 * ENV_BASE['plant_density']
@@ -112,7 +112,7 @@ def run_simulation_with_history(env_config, description=""):
 
     initial_state = [Xd_init, C_buf_init, LAI_init, Anth_init, 0.0, 0.0]
 
-    # 模擬時間
+    # Simulation time
     transplant_day = SIMULATION['transplant_offset']
     simulation_days = SIMULATION['days']
     t_start = transplant_day * 86400
@@ -151,8 +151,8 @@ def run_simulation_with_history(env_config, description=""):
 # FIG 9: LAI Vulnerability Function
 # ============================================================
 def generate_fig9_lai_vulnerability():
-    """圖9. LAI脆弱性函數曲線"""
-    print("  生成圖9: LAI脆弱性函數...")
+    """Fig 9. LAI vulnerability function curve"""
+    print("  Generating Fig 9: LAI vulnerability function...")
     fig, ax = plt.subplots(figsize=(10, 7))
 
     p = UVAParams()
@@ -165,7 +165,7 @@ def generate_fig9_lai_vulnerability():
     ax.semilogy(LAI, vulnerability, 'b-', linewidth=2.5,
                 label=f'vulnerability = A×exp(-k×LAI) + 1\n(A={A_vuln:.1e}, k={k_vuln})')
 
-    # 標記關鍵點
+    # Mark key points
     key_points = [
         (5.5, 'D12 groups\n(Day 23 start)', 'red'),
         (7.5, 'D6 groups\n(Day 29 start)', 'green'),
@@ -196,7 +196,7 @@ def generate_fig9_lai_vulnerability():
 
     plt.tight_layout()
     plt.savefig('fig9_lai_vulnerability.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig9_lai_vulnerability.png")
+    print("    Generated: fig9_lai_vulnerability.png")
     plt.close()
 
 
@@ -204,8 +204,8 @@ def generate_fig9_lai_vulnerability():
 # FIG 10: Nonlinear Damage Factor (Gompertz)
 # ============================================================
 def generate_fig10_nonlinear_factor():
-    """圖10. 非線性傷害因子曲線 (Gompertz)"""
-    print("  生成圖10: 非線性傷害因子...")
+    """Fig 10. Nonlinear damage factor curve (Gompertz)"""
+    print("  Generating Fig 10: Nonlinear damage factor...")
     fig, ax = plt.subplots(figsize=(10, 7))
 
     p = UVAParams()
@@ -216,7 +216,7 @@ def generate_fig10_nonlinear_factor():
     ax.semilogy(hours, factors, 'b-', linewidth=2.5,
                 label=f'Gompertz factor\n(threshold={p.gompertz_threshold}h, max={p.gompertz_max_factor})')
 
-    # 標記關鍵點
+    # Mark key points
     key_points = [
         (3, 'VL3D3/VL3D12\n3h/day', 'green'),
         (6, 'L6D6/L6D12\n6h/day', 'blue'),
@@ -244,7 +244,7 @@ def generate_fig10_nonlinear_factor():
                        fontsize=10, ha='left',
                        arrowprops=dict(arrowstyle='->', color=color, lw=1.5))
 
-    # 閾值線
+    # Threshold line
     ax.axvline(x=p.gompertz_threshold, color='gray', linestyle=':', alpha=0.5, linewidth=1.5)
     ax.text(p.gompertz_threshold + 0.2, 1.5, f'threshold\n({p.gompertz_threshold}h)', fontsize=9, color='gray')
 
@@ -263,22 +263,22 @@ def generate_fig10_nonlinear_factor():
 
     plt.tight_layout()
     plt.savefig('fig10_nonlinear_factor.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig10_nonlinear_factor.png")
+    print("    Generated: fig10_nonlinear_factor.png")
     plt.close()
 
 
 # ============================================================
-# FIG 11: Training Set FW Response (曲線圖，類似 FIG13)
+# FIG 11: Training Set FW Response (curve plot, similar to FIG13)
 # ============================================================
 def generate_fig11_training_fw():
-    """圖11. 訓練組鮮重響應曲線"""
-    print("  生成圖11: 訓練組鮮重響應曲線...")
+    """Fig 11. Training set fresh weight response curve"""
+    print("  Generating Fig 11: Training set fresh weight response curve...")
     fig, ax = plt.subplots(figsize=(10, 7))
 
-    # 訓練組處理 (按類型排序)
-    # D6組: L6D6(6h×6d), L6D6-N(6h×6d夜間)
-    # D12組: VL3D12(3h×12d), L6D12(6h×12d)
-    # D3組: H12D3(12h×3d)
+    # Training group treatments (sorted by type)
+    # D6 groups: L6D6(6h×6d), L6D6-N(6h×6d night)
+    # D12 groups: VL3D12(3h×12d), L6D12(6h×12d)
+    # D3 groups: H12D3(12h×3d)
     training_treatments = ['CK', 'L6D6', 'L6D6-N', 'VL3D12', 'L6D12', 'H12D3']
     x_positions = [0, 1, 2, 3, 4, 5]
     labels = ['CK\n(0h)', 'L6D6\n(6h×6d)', 'L6D6-N\n(6h×6d,N)', 'VL3D12\n(3h×12d)', 'L6D12\n(6h×12d)', 'H12D3\n(12h×3d)']
@@ -294,13 +294,13 @@ def generate_fig11_training_fw():
         else:
             sim_fw.append(np.nan)
 
-    # 繪製曲線
+    # Plot curves
     ax.plot(x_positions, obs_fw, 'o-', markersize=12, linewidth=2.5,
             color='steelblue', label='Observed', markeredgecolor='black', markeredgewidth=1.5)
     ax.plot(x_positions, sim_fw, 's--', markersize=10, linewidth=2,
             color='coral', label='Simulated', markeredgecolor='black', markeredgewidth=1.5)
 
-    # 添加誤差標註
+    # Add error annotations
     for i, (obs, sim) in enumerate(zip(obs_fw, sim_fw)):
         if not np.isnan(sim):
             error = (sim - obs) / obs * 100
@@ -325,16 +325,16 @@ def generate_fig11_training_fw():
 
     plt.tight_layout()
     plt.savefig('fig11_model_validation.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig11_model_validation.png")
+    print("    Generated: fig11_model_validation.png")
     plt.close()
 
 
 # ============================================================
-# FIG 12: Training Set Anthocyanin Response (曲線圖，類似 FIG14)
+# FIG 12: Training Set Anthocyanin Response (curve plot, similar to FIG14)
 # ============================================================
 def generate_fig12_training_anth():
-    """圖12. 訓練組花青素響應曲線"""
-    print("  生成圖12: 訓練組花青素響應曲線...")
+    """Fig 12. Training set anthocyanin response curve"""
+    print("  Generating Fig 12: Training set anthocyanin response curve...")
     fig, ax = plt.subplots(figsize=(10, 7))
 
     training_treatments = ['CK', 'L6D6', 'L6D6-N', 'VL3D12', 'L6D12', 'H12D3']
@@ -352,13 +352,13 @@ def generate_fig12_training_anth():
         else:
             sim_anth.append(np.nan)
 
-    # 繪製曲線
+    # Plot curves
     ax.plot(x_positions, obs_anth, 'o-', markersize=12, linewidth=2.5,
             color='purple', label='Observed', markeredgecolor='black', markeredgewidth=1.5)
     ax.plot(x_positions, sim_anth, 's--', markersize=10, linewidth=2,
             color='orchid', label='Simulated', markeredgecolor='black', markeredgewidth=1.5)
 
-    # 添加誤差標註
+    # Add error annotations
     for i, (obs, sim) in enumerate(zip(obs_anth, sim_anth)):
         if not np.isnan(sim):
             error = (sim - obs) / obs * 100
@@ -366,7 +366,7 @@ def generate_fig12_training_anth():
             ax.annotate(f'{error:+.1f}%', xy=(i, sim), xytext=(i+0.1, sim+15),
                        fontsize=10, color=color, fontweight='bold')
 
-    # 標記 H12D3 最高點
+    # Mark H12D3 maximum point
     max_idx = np.argmax(obs_anth)
     ax.annotate('Max Anthocyanin\n(H12D3)', xy=(max_idx, obs_anth[max_idx]),
                xytext=(max_idx-0.8, obs_anth[max_idx]+50),
@@ -390,7 +390,7 @@ def generate_fig12_training_anth():
 
     plt.tight_layout()
     plt.savefig('fig12_stress_dynamics.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig12_stress_dynamics.png")
+    print("    Generated: fig12_stress_dynamics.png")
     plt.close()
 
 
@@ -398,8 +398,8 @@ def generate_fig12_training_anth():
 # FIG 13: Validation Set FW Response
 # ============================================================
 def generate_fig13_validation_fw():
-    """圖13. 驗證組鮮重響應曲線"""
-    print("  生成圖13: 驗證組鮮重響應曲線...")
+    """Fig 13. Validation set fresh weight response curve"""
+    print("  Generating Fig 13: Validation set fresh weight response curve...")
     fig, ax = plt.subplots(figsize=(10, 7))
 
     validation_treatments = ['CK_val', 'VL3D3', 'L6D3', 'M9D3', 'H12D3_val', 'VH15D3']
@@ -444,7 +444,7 @@ def generate_fig13_validation_fw():
 
     plt.tight_layout()
     plt.savefig('fig13_validation_fw.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig13_validation_fw.png")
+    print("    Generated: fig13_validation_fw.png")
     plt.close()
 
 
@@ -452,8 +452,8 @@ def generate_fig13_validation_fw():
 # FIG 14: Validation Set Anthocyanin Response (Hormesis)
 # ============================================================
 def generate_fig14_validation_anth():
-    """圖14. 驗證組花青素響應曲線 (顯示 hormesis)"""
-    print("  生成圖14: 驗證組花青素響應曲線...")
+    """Fig 14. Validation set anthocyanin response curve (showing hormesis)"""
+    print("  Generating Fig 14: Validation set anthocyanin response curve...")
     fig, ax = plt.subplots(figsize=(10, 7))
 
     validation_treatments = ['CK_val', 'VL3D3', 'L6D3', 'M9D3', 'H12D3_val', 'VH15D3']
@@ -482,7 +482,7 @@ def generate_fig14_validation_anth():
             ax.annotate(f'{error:+.1f}%', xy=(h, sim), xytext=(h+0.3, sim+15),
                        fontsize=10, color=color, fontweight='bold')
 
-    # 標記 hormesis 峰值
+    # Mark hormesis peak
     max_idx = np.argmax(obs_anth)
     ax.annotate('Hormesis Peak', xy=(daily_hours[max_idx], obs_anth[max_idx]),
                xytext=(daily_hours[max_idx]-2, obs_anth[max_idx]+50),
@@ -508,7 +508,7 @@ def generate_fig14_validation_anth():
 
     plt.tight_layout()
     plt.savefig('fig14_validation_anth.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig14_validation_anth.png")
+    print("    Generated: fig14_validation_anth.png")
     plt.close()
 
 
@@ -516,8 +516,8 @@ def generate_fig14_validation_anth():
 # FIG 15: Validation Set Scatter Plot
 # ============================================================
 def generate_fig15_validation_scatter():
-    """圖15. 驗證組模型預測 vs 觀測"""
-    print("  生成圖15: 驗證組模型預測 vs 觀測...")
+    """Fig 15. Validation set model prediction vs observation"""
+    print("  Generating Fig 15: Validation set model prediction vs observation...")
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
     validation_treatments = ['CK_val', 'VL3D3', 'L6D3', 'M9D3', 'H12D3_val', 'VH15D3']
@@ -538,7 +538,7 @@ def generate_fig15_validation_scatter():
             sim_fw.append(np.nan)
             sim_anth.append(np.nan)
 
-    # 圖15a: 鮮重
+    # Fig 15a: Fresh weight
     ax1 = axes[0]
     for obs, sim, label, color in zip(obs_fw, sim_fw, labels, colors):
         ax1.scatter(obs, sim, c=color, s=180, label=label,
@@ -564,7 +564,7 @@ def generate_fig15_validation_scatter():
             transform=ax1.transAxes, fontsize=10, ha='right', va='bottom',
             bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
 
-    # 圖15b: 花青素
+    # Fig 15b: Anthocyanin
     ax2 = axes[1]
     for obs, sim, label, color in zip(obs_anth, sim_anth, labels, colors):
         ax2.scatter(obs, sim, c=color, s=180, label=label,
@@ -593,7 +593,7 @@ def generate_fig15_validation_scatter():
     plt.suptitle('Fig. 15. Validation Set: Model Prediction vs Observation', fontsize=15, y=1.02)
     plt.tight_layout()
     plt.savefig('fig15_validation_scatter.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig15_validation_scatter.png")
+    print("    Generated: fig15_validation_scatter.png")
     plt.close()
 
 
@@ -601,23 +601,23 @@ def generate_fig15_validation_scatter():
 # FIG 16: Anthocyanin Synthesis Efficiency
 # ============================================================
 def generate_fig16_anth_efficiency():
-    """圖16. 花青素合成效率函數"""
-    print("  生成圖16: 花青素合成效率函數...")
+    """Fig 16. Anthocyanin synthesis efficiency function"""
+    print("  Generating Fig 16: Anthocyanin synthesis efficiency function...")
     fig, ax = plt.subplots(figsize=(10, 7))
 
     p = UVAParams()
 
-    # 計算 nonlinear_factor 範圍
+    # Calculate nonlinear_factor range
     hours = np.linspace(0, 16, 200)
     nonlin_factors = [nonlinear_damage_factor(h, p) for h in hours]
 
-    # 計算效率
+    # Calculate efficiency
     efficiencies = [calculate_nonlin_anth_efficiency(nf, p) for nf in nonlin_factors]
 
     ax.plot(hours, np.array(efficiencies) * 100, 'b-', linewidth=2.5,
             label='Synthesis efficiency')
 
-    # 標記關鍵點
+    # Mark key points
     key_points = [
         (6, 'L6D6\n6h/day', 'blue'),
         (9, 'M9D3\n9h/day', 'orange'),
@@ -658,7 +658,7 @@ def generate_fig16_anth_efficiency():
 
     plt.tight_layout()
     plt.savefig('fig16_hill_efficiency.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig16_hill_efficiency.png")
+    print("    Generated: fig16_hill_efficiency.png")
     plt.close()
 
 
@@ -666,8 +666,8 @@ def generate_fig16_anth_efficiency():
 # FIG 17: System Dynamics Block Diagram
 # ============================================================
 def generate_fig17_system_dynamics():
-    """圖17. 系統動力學方塊圖"""
-    print("  生成圖17: 系統動力學方塊圖...")
+    """Fig 17. System dynamics block diagram"""
+    print("  Generating Fig 17: System dynamics block diagram...")
     import matplotlib.patches as mpatches
     from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 
@@ -767,7 +767,7 @@ def generate_fig17_system_dynamics():
 
     plt.tight_layout()
     plt.savefig('fig17_system_dynamics.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig17_system_dynamics.png")
+    print("    Generated: fig17_system_dynamics.png")
     plt.close()
 
 
@@ -775,8 +775,8 @@ def generate_fig17_system_dynamics():
 # FIG 18: Hormesis 3D Surface
 # ============================================================
 def generate_fig18_hormesis_3d():
-    """圖18. Hormesis 3D 曲面圖"""
-    print("  生成圖18: Hormesis 3D 曲面圖...")
+    """Fig 18. Hormesis 3D surface plot"""
+    print("  Generating Fig 18: Hormesis 3D surface plot...")
     from mpl_toolkits.mplot3d import Axes3D
 
     fig = plt.figure(figsize=(12, 9))
@@ -790,7 +790,7 @@ def generate_fig18_hormesis_3d():
     Days, Hours = np.meshgrid(days_range, hours_range)
     Anth = np.zeros_like(Days, dtype=float)
 
-    print("    計算 Hormesis 曲面數據...")
+    print("    Computing Hormesis surface data...")
 
     for i, days in enumerate(days_range):
         for j, hours in enumerate(hours_range):
@@ -872,7 +872,7 @@ def generate_fig18_hormesis_3d():
 
     plt.tight_layout()
     plt.savefig('fig18_hormesis_3d.png', dpi=150, bbox_inches='tight')
-    print("    已生成: fig18_hormesis_3d.png")
+    print("    Generated: fig18_hormesis_3d.png")
     plt.close()
 
 
@@ -881,50 +881,50 @@ def generate_fig18_hormesis_3d():
 # ============================================================
 if __name__ == "__main__":
     print("=" * 60)
-    print("生成論文圖表 FIG9-18 (v10.37)")
+    print("Generating Paper Figures FIG9-18 (v10.37)")
     print("=" * 60)
 
-    print("\n[1/10] 生成圖9: LAI脆弱性函數...")
+    print("\n[1/10] Generating Fig 9: LAI vulnerability function...")
     generate_fig9_lai_vulnerability()
 
-    print("\n[2/10] 生成圖10: 非線性傷害因子 (Gompertz)...")
+    print("\n[2/10] Generating Fig 10: Nonlinear damage factor (Gompertz)...")
     generate_fig10_nonlinear_factor()
 
-    print("\n[3/10] 生成圖11: 訓練組鮮重響應曲線...")
+    print("\n[3/10] Generating Fig 11: Training set fresh weight response curve...")
     generate_fig11_training_fw()
 
-    print("\n[4/10] 生成圖12: 訓練組花青素響應曲線...")
+    print("\n[4/10] Generating Fig 12: Training set anthocyanin response curve...")
     generate_fig12_training_anth()
 
-    print("\n[5/10] 生成圖13: 驗證組鮮重響應曲線...")
+    print("\n[5/10] Generating Fig 13: Validation set fresh weight response curve...")
     generate_fig13_validation_fw()
 
-    print("\n[6/10] 生成圖14: 驗證組花青素響應曲線...")
+    print("\n[6/10] Generating Fig 14: Validation set anthocyanin response curve...")
     generate_fig14_validation_anth()
 
-    print("\n[7/10] 生成圖15: 驗證組散點圖...")
+    print("\n[7/10] Generating Fig 15: Validation set scatter plot...")
     generate_fig15_validation_scatter()
 
-    print("\n[8/10] 生成圖16: 花青素合成效率函數...")
+    print("\n[8/10] Generating Fig 16: Anthocyanin synthesis efficiency function...")
     generate_fig16_anth_efficiency()
 
-    print("\n[9/10] 生成圖17: 系統動力學方塊圖...")
+    print("\n[9/10] Generating Fig 17: System dynamics block diagram...")
     generate_fig17_system_dynamics()
 
-    print("\n[10/10] 生成圖18: Hormesis 3D 曲面圖...")
+    print("\n[10/10] Generating Fig 18: Hormesis 3D surface plot...")
     generate_fig18_hormesis_3d()
 
     print("\n" + "=" * 60)
-    print("所有圖表生成完成!")
+    print("All figures generated successfully!")
     print("=" * 60)
-    print("\n生成的檔案:")
+    print("\nGenerated files:")
     print("  - fig9_lai_vulnerability.png")
     print("  - fig10_nonlinear_factor.png")
-    print("  - fig11_model_validation.png   (訓練組 FW 曲線)")
-    print("  - fig12_stress_dynamics.png    (訓練組 Anth 曲線)")
-    print("  - fig13_validation_fw.png      (驗證組 FW 曲線)")
-    print("  - fig14_validation_anth.png    (驗證組 Anth 曲線)")
-    print("  - fig15_validation_scatter.png (驗證組散點圖)")
-    print("  - fig16_hill_efficiency.png    (花青素合成效率 - Hill函數)")
-    print("  - fig17_system_dynamics.png    (系統方塊圖)")
-    print("  - fig18_hormesis_3d.png        (3D 曲面圖)")
+    print("  - fig11_model_validation.png   (Training set FW curve)")
+    print("  - fig12_stress_dynamics.png    (Training set Anth curve)")
+    print("  - fig13_validation_fw.png      (Validation set FW curve)")
+    print("  - fig14_validation_anth.png    (Validation set Anth curve)")
+    print("  - fig15_validation_scatter.png (Validation set scatter plot)")
+    print("  - fig16_hill_efficiency.png    (Anthocyanin synthesis efficiency - Hill function)")
+    print("  - fig17_system_dynamics.png    (System block diagram)")
+    print("  - fig18_hormesis_3d.png        (3D surface plot)")

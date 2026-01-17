@@ -1,6 +1,6 @@
 """
-快速生成 Fig20 優化熱力圖 (v10.39)
-使用較少的採樣點加速計算
+Quick generation of Fig20 optimization heatmap (v10.39)
+Uses fewer sampling points to speed up calculation
 """
 
 import numpy as np
@@ -15,7 +15,7 @@ from simulate_uva_model_v10 import UVAParams, uva_sun_derivatives, calculate_dyn
 from model_config import ENV_BASE, SIMULATION
 
 def simulate_treatment(hours_per_day, num_days):
-    """模擬指定的 UVA 處理方案"""
+    """Simulate specified UVA treatment protocol"""
     p = UVAParams()
 
     harvest_day = 35
@@ -54,7 +54,7 @@ def simulate_treatment(hours_per_day, num_days):
         initial_state,
         args=(p, env),
         method='RK45',
-        max_step=600  # 加大步長加速
+        max_step=600  # Increase step size to speed up
     )
 
     if not sol.success:
@@ -62,7 +62,7 @@ def simulate_treatment(hours_per_day, num_days):
 
     Xd_f, Cbuf_f, LAI_f, Anth_f, Stress_f, ROS_f = sol.y[:, -1]
 
-    # 計算平均 Stress
+    # Calculate average Stress
     uva_start_time = start_day * 86400
     stress_sum = 0
     stress_count = 0
@@ -84,11 +84,11 @@ def simulate_treatment(hours_per_day, num_days):
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("生成 Fig20: UVA 優化熱力圖 (v10.39)")
+    print("Generating Fig20: UVA Optimization Heatmap (v10.39)")
     print("=" * 60)
 
-    # 對照組
-    print("\n[1] 模擬對照組...")
+    # Control group
+    print("\n[1] Simulating control group...")
     p = UVAParams()
     env_ck = ENV_BASE.copy()
     env_ck['uva_on'] = False
@@ -125,23 +125,23 @@ if __name__ == "__main__":
     FW_total_kg = FW_ck / 1000 * ENV_BASE['plant_density']
     Anth_ck = Anth_f / FW_total_kg * 1e6
 
-    print(f"   對照組: FW = {FW_ck:.1f} g, Anth = {Anth_ck:.1f} μg/g")
+    print(f"   Control: FW = {FW_ck:.1f} g, Anth = {Anth_ck:.1f} ug/g")
 
-    # 搜尋範圍
-    hours_range = [3, 6, 9, 12]  # 關鍵時數
-    days_range = [3, 4, 5, 6, 7, 8, 9, 10, 12]  # 關鍵天數
+    # Search range
+    hours_range = [3, 6, 9, 12]  # Key hours
+    days_range = [3, 4, 5, 6, 7, 8, 9, 10, 12]  # Key days
 
-    print(f"\n[2] 搜尋範圍: {hours_range} 小時/天, {days_range} 天")
+    print(f"\n[2] Search range: {hours_range} hours/day, {days_range} days")
 
     results = []
     total = len(hours_range) * len(days_range)
     count = 0
 
-    print("\n[3] 執行優化搜尋...")
+    print("\n[3] Executing optimization search...")
     for hours in hours_range:
         for days in days_range:
             count += 1
-            print(f"   {count}/{total}: {hours}h × {days}d", end="")
+            print(f"   {count}/{total}: {hours}h x {days}d", end="")
 
             FW, Anth, success = simulate_treatment(hours, days)
 
@@ -162,25 +162,25 @@ if __name__ == "__main__":
                     'anth_change': anth_change,
                     'anth_total_change': anth_total_change,
                 })
-                print(f" → FW={FW:.1f}g ({fw_change:+.1f}%), Anth={Anth:.0f} ({anth_change:+.1f}%)")
+                print(f" -> FW={FW:.1f}g ({fw_change:+.1f}%), Anth={Anth:.0f} ({anth_change:+.1f}%)")
             else:
-                print(" → 失敗")
+                print(" -> Failed")
 
-    # 顯示最佳結果
+    # Display best results
     print("\n" + "=" * 60)
-    print("最佳策略 (鮮重不減 ≥-5%，花青素總量最高)")
+    print("Best strategies (FW loss >= -5%, highest total anthocyanin)")
     print("=" * 60)
 
     safe_results = [r for r in results if r['fw_change'] >= -5]
     safe_results.sort(key=lambda x: x['anth_total_change'], reverse=True)
 
-    print(f"\n{'排名':<4} {'小時/天':<8} {'天數':<6} {'FW(g)':<10} {'Anth':<10} {'FW變化':<10} {'Anth變化':<10} {'總量變化':<10}")
+    print(f"\n{'Rank':<4} {'Hours/Day':<8} {'Days':<6} {'FW(g)':<10} {'Anth':<10} {'FW Change':<10} {'Anth Change':<10} {'Total Change':<10}")
     print("-" * 80)
     for i, r in enumerate(safe_results[:5]):
         print(f"{i+1:<4} {r['hours']:<8} {r['days']:<6} {r['FW']:<10.1f} {r['Anth']:<10.0f} {r['fw_change']:>+8.1f}% {r['anth_change']:>+8.1f}% {r['anth_total_change']:>+8.1f}%")
 
-    # 生成熱圖
-    print("\n[4] 生成熱圖...")
+    # Generate heatmap
+    print("\n[4] Generating heatmap...")
 
     hours_list = sorted(set(r['hours'] for r in results))
     days_list = sorted(set(r['days'] for r in results))
@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-    # FW 變化熱圖
+    # FW change heatmap
     im1 = axes[0].imshow(fw_matrix, cmap='RdYlGn', aspect='auto',
                           vmin=-30, vmax=10)
     axes[0].set_xticks(range(len(hours_list)))
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     axes[0].set_title('Fresh Weight Change (%)', fontsize=14)
     plt.colorbar(im1, ax=axes[0])
 
-    # 標記數值
+    # Label values
     for i in range(len(days_list)):
         for j in range(len(hours_list)):
             val = fw_matrix[i, j]
@@ -217,7 +217,7 @@ if __name__ == "__main__":
                 axes[0].text(j, i, f'{val:.0f}', ha='center', va='center',
                             fontsize=9, color=color)
 
-    # 花青素總量變化熱圖
+    # Anthocyanin total change heatmap
     im2 = axes[1].imshow(anth_matrix, cmap='YlOrRd', aspect='auto',
                           vmin=0, vmax=50)
     axes[1].set_xticks(range(len(hours_list)))
@@ -229,7 +229,7 @@ if __name__ == "__main__":
     axes[1].set_title('Anthocyanin Total Change (%)', fontsize=14)
     plt.colorbar(im2, ax=axes[1])
 
-    # 標記數值
+    # Label values
     for i in range(len(days_list)):
         for j in range(len(hours_list)):
             val = anth_matrix[i, j]
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     plt.suptitle('Fig. 20. UVA Optimization Heatmap (v10.39, 11 W/m²)', fontsize=14, y=1.02)
     plt.tight_layout()
     plt.savefig('fig20_optimization_heatmap.png', dpi=150, bbox_inches='tight')
-    print("   已生成: fig20_optimization_heatmap.png")
+    print("   Generated: fig20_optimization_heatmap.png")
     plt.close()
 
-    print("\n完成!")
+    print("\nDone!")

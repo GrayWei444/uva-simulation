@@ -12,7 +12,7 @@ A Two-Stage Screening-to-Optimization Approach with Mechanistic Model Analysis: 
 
 摘要 (Abstract)
 
-在植物工廠中提升紅葉萵苣花青素含量常伴隨產量損失。本研究提出結合機制模型的兩階段「篩選-優化」方法以解決此權衡問題。第一階段實驗證實 UVA 較 UVB 更能兼顧生長與著色，並確定 'Lollo Rosso' 為高響應品種；第二階段實驗顯示 L6D6 (6h/day × 6d) 可提升單株花青素總量 15.4% 且維持產量。基於觀察到的生物量超補償 (Biomass Overcompensation)、夜間節律干擾及個體發育依賴脆弱性 (Ontogeny-dependent Vulnerability) 等非線性現象，本研究建立了一套整合 ROS 動態損傷-修復機制的六狀態變量常微分方程 (ODE) 模型。該模型在包含極端劑量的獨立驗證組中展現高度準確性（誤差 <10%），證實了機制項的生理必要性。模型全域優化預測顯示 9h/day × 5天 為理論最佳策略，預期花青素總量可提升 34.0% 並維持鮮重 (+1.3%)，顯著優於實驗最佳組。本研究建立的量化機制模型為受控環境農業的精準逆境光配方開發提供了科學基礎。
+在植物工廠中提升紅葉萵苣花青素含量常伴隨產量損失。本研究提出結合機制模型的兩階段「篩選—優化」流程以降低此權衡。第一階段比較 UVA 與 UVB 對多品種紅葉萵苣的影響，結果顯示 UVB 雖可強烈提升著色但伴隨明顯損傷與減產；相較之下，UVA 能在無明顯外觀傷害下提升花青素表現，且具品種差異性，因而選定 'Lollo Rosso' 作為後續優化對象。第二階段以固定 UVA 強度下不同日照射時數與天數組合進行處理，實驗顯示 L6D6（6 h/day × 6 d）可在維持鮮重的前提下提升單株花青素總量（+15.4%）。為解釋並外推不同配方下的非線性響應，本研究在 Sun et al. 的萵苣生長模型框架上，整合 UVA 誘導之形態建成效應、ROS 生成與清除、逆境損傷—修復動態、發育階段脆弱性與長時照射非線性放大等機制，建立六狀態變量 ODE 模型，並以資料驅動方式校準參數。模型在訓練組與獨立驗證組中均能同時重現鮮重與花青素的端點結果（驗證誤差 <10%），並成功捕捉 12–15 h/day 區間的 hormesis 型非單調反應。基於校準模型的全域搜尋結果，預測 9 h/day × 5 d 為在維持鮮重下提升單株花青素總量的理論最適策略（預期 +34%），可作為後續配方驗證與精準逆境光策略開發之依據。
 
 關鍵詞：UVA輻射；紅葉萵苣；花青素生物合成；可控環境農業；LED補光；篩選-優化方法論；機制模型；常微分方程；數據驅動擬合
 
@@ -148,12 +148,8 @@ $$E_{daily} = I_{UVA} \times t_{daily}$$
 | 12 | 43,200 | 47.5 |
 | 15 | 54,000 | 59.4 |
 
-戶外冬季太陽UVA比較：
-根據 Verdaguer et al. (2017) 的綜述，自然陽光中 UVA (315-400 nm) 輻射強度約為總 UV 的 95%，在溫帶地區晴天正午可達 2000-5000 μW/cm²。台灣冬季（12月-2月）晴天條件下，有效日照時段約為 9:30-15:30（共6小時），UVA輻射強度約 1500-3000 μW/cm²（取中值 2250 μW/cm²）。戶外日照射UVA能量估算為：
-
-$$E_{outdoor} = 2250 \times 21600 / 10000 = 48.6 \text{ J/cm}^2$$
-
-此計算顯示，本研究的 12h/day 處理 (47.5 J/cm²) 與冬季戶外自然日照的UVA能量相當，驗證了實驗設計的生態相關性 (Krizek et al., 1997)。
+戶外太陽UVA情境比較：
+根據 Verdaguer et al. (2017) 的綜述，自然陽光中 UVA (315-400 nm) 輻射強度約為總 UV 的 95%，在溫帶地區晴天正午可達 2000-5000 μW/cm²。假設典型冬季晴天有效日照約 6 小時、平均 UVA 強度約 2000-2500 μW/cm²，則戶外日累積 UVA 能量約 40-55 J/cm²。此情境估算顯示，本研究的 12h/day 處理 (47.5 J/cm²) 與戶外自然日照的 UVA 能量處於相近量級，具有生態參考意義 (Krizek et al., 1997)。
 
 2.3.3 處理設計（訓練組）
 
@@ -283,7 +279,7 @@ Day 23
 
 2.5.1 模型架構概述
 
-本模型以 Sun et al. (2025) 的萵苣生長模型為基礎，整合六項關鍵機制：(1) UVA 形態效應（促進葉面積擴展）；(2) ROS 動態 ODE；(3) Stress 損傷-修復動態；(4) LAI 依賴脆弱性；(5) 照射時間依賴非線性傷害；(6) 夜間節律損傷。核心設計原則是「連續性」，採用 Michaelis-Menten 型飽和函數與冪函數，避免人為閾值。
+本模型以 Sun et al. (2025) 的萵苣生長模型為基礎，整合六項關鍵機制：(1) UVA 形態效應（促進葉面積擴展）；(2) ROS 動態；(3) Stress 損傷-修復動態；(4) LAI 依賴脆弱性；(5) 照射時間依賴非線性傷害；(6) 夜間節律損傷。所有響應函數均採用連續可微的飽和函數或冪函數形式表徵。
 
 2.5.2 狀態變量
 
@@ -351,7 +347,7 @@ $$\frac{dLAI}{dt} = \frac{dX_d}{dt} \cdot SLA_{new} - k_{senescence} \cdot LAI \
 
 $$SLA_{new} = SLA_{base} \times (1 + \frac{k_{LAI} \cdot I_{UVA}}{K_{LAI} + I_{UVA}})$$
 
-**生理意義**：UVA (365nm) 的量子產率極低，葉綠素對此波長的吸收效率不佳，因此 UVA 不直接貢獻光合作用。然而，Chen et al. (2019) 觀察到 UVA 甚至能增加萵苣生物量，這更可能來自「形態建成效應」。UVA 照射可促進葉面積擴展（Chen et al., 2019 報導 SLA 增加 15-26%），更大的葉面積意味著更高的 PAR 光截獲量，從而間接促進光合作用。
+**生理意義**：UVA (365nm) 的量子產率極低，葉綠素對此波長的吸收效率不佳，因此 UVA 不直接貢獻光合作用。然而，Chen et al. (2019) 及 Samuolienė et al. (2020) 均觀察到 UVA 可維持甚至提升萵苣生物量，這更可能來自「形態建成效應」。UVA 照射可促進葉面積擴展（Chen et al., 2019 報導 SLA 增加 15-26%），更大的葉面積意味著更高的 PAR 光截獲量，從而間接促進光合作用。
 
 **機制解釋**：此機制為 L6D6 處理組觀察到的「生物量超補償 (Biomass Overcompensation)」現象提供了數學解釋——即 UVA 誘導的形態可塑性 (Morphological Plasticity) 帶來的光截獲增益，超過了維持防禦機制的代謝成本。
 
@@ -391,37 +387,68 @@ $$Nonlinear\_Factor = 1 + F_{max} \cdot \exp\left(-\exp\left(-k_{steep}(Hours - 
 
 僅在夜間觸發：$Circadian\_Damage = k_{circ} \cdot I_{UVA} \cdot Hours\_in\_Dark^{n\_circ}$
 
-**文獻**：Lai et al. (2012) 證實生理時鐘基因 CCA1 調控 ROS 穩態；Jiménez et al. (2023) 綜述抗氧化酶活性的晝夜節律；Nitschke et al. (2016) 指出節律紊亂會加劇細胞死亡。
+**文獻**：Lai et al. (2012) 證實生理時鐘基因 CCA1 調控 ROS 穩態；Budkowska et al. (2022) 綜述抗氧化酶活性的晝夜節律；Nitschke et al. (2016) 指出節律紊亂會加劇細胞死亡。
 
 **d. Stress 衰減 (Decay)**
 
-Stress 衰減模擬受損蛋白的降解與更新週期 (Mulo et al., 2008; Järvi et al., 2015)，設定半衰期約 9 小時（$k_{decay} = \ln(2) / (9 \times 3600) \approx 2.14 \times 10^{-5}$ s⁻¹）。
+Stress 衰減模擬受損蛋白的降解與更新週期 (Mulo et al., 2008; Järvi et al., 2015; Puthiyaveetil et al., 2014)，設定半衰期約 9 小時（$k_{decay} = \ln(2) / (9 \times 3600) \approx 2.14 \times 10^{-5}$ s⁻¹）。
 
 **(6) 花青素動態 (Anthocyanin Dynamics)**
 
 $$\frac{dAnth}{dt} = Synthesis - Degradation - Consumption \tag{8}$$
 
-**合成機制**：包含基礎合成、Stress 誘導 (Albert et al., 2014; Winkel-Shirley, 2002) 及 UV 直接誘導 (An et al., 2021)。
+完整展開形式如下：
 
-**消耗機制**：採用 Hill 方程 ($n=2$) 描述高氧化壓下花青素作為抗氧化劑被消耗。
+$$\frac{dAnth}{dt} = LAI \times (S_{base} + S_{UV} + S_{Stress} \times f_{adapt} \times \eta_{nonlin}) \times \eta_{Stress} \times \eta_{water} - k_{deg} \times Anth - C_{ROS}$$
 
-**文獻**：花青素具清除 ROS 能力 (Gould, 2004; Xu & Rothstein, 2018)，在極端逆境下會被犧牲以保護細胞 (Cerqueira et al., 2023)。
+各項定義：
 
-**修正因子 1：水分抑制效應**
+**a. 基礎合成 $S_{base}$**（Albert et al., 2014; Winkel-Shirley, 2002）：
+$$S_{base} = \begin{cases} 6.35 \times 10^{-10} & \text{日間} \\ 3.18 \times 10^{-10} & \text{夜間} \end{cases} \text{ [kg m}^{-2} \text{s}^{-1}\text{]}$$
 
-在極端 UVA 逆境下（如 15h/day），植物會因嚴重脫水導致花青素合成效率下降。
+**b. UV 直接誘導 $S_{UV}$**（An et al., 2021）：
+$$S_{UV} = 1.4 \times 10^{-11} \times \frac{t_{UV}}{K_{UV} + t_{UV}}$$
+其中 $t_{UV}$ = 累積 UVA 暴露時間 [h]，$K_{UV}$ = 30 [h]。
 
-$$Water\_Efficiency = 1 - Max\_Inhib \times \exp\left(-\exp\left(-k_{steep} \times (DW/FW - Threshold)\right)\right)$$
+**c. Stress 誘導 $S_{Stress}$**：
+$$S_{Stress} = V_{max,anth} \times \frac{Stress}{K_{Stress,anth} + Stress} \times \eta_{night} \times \eta_{LAI}$$
+其中 $V_{max,anth}$ = 2.75×10⁻⁹ [kg m⁻² s⁻¹]，$K_{Stress,anth}$ = 100。
 
-**文獻**：Garnier et al. (2001) 指出葉片乾物質含量 (LDMC = DW/FW) 是反映植物水分狀態的可靠指標。Hadacek (2010) 與 Ferreyra et al. (2021) 綜述了逆境中的劑量-反應模式（hormesis）。當細胞膨壓喪失時，代謝酵素活性下降，導致花青素合成途徑受損。
+**d. 夜間照射抑制 $\eta_{night}$**：
+$$\eta_{night} = \begin{cases} 0.4 & \text{若 UVA 照射時段為夜間 (18:00-6:00)} \\ 1.0 & \text{其他} \end{cases}$$
 
-**修正因子 2：低 LAI 抑制 Stress 誘導效率**
+**e. LAI 抑制 $\eta_{LAI}$**（Wang et al., 2022; Zhao et al., 2022）：
+$$\eta_{LAI} = \min\left(1, \left(\frac{LAI}{LAI_{healthy}}\right)^{n_{LAI}}\right)$$
+其中 $LAI_{healthy}$ = 9.0，$n_{LAI}$ = 2.0。
 
-D12 組（VL3D12, L6D12）因早期照射導致 LAI 較低，花青素合成效率反而下降。
+**f. 適應因子 $f_{adapt}$**：
+$$f_{adapt} = \frac{K_{adapt}}{K_{adapt} + D_{irrad}}$$
+其中 $K_{adapt}$ = 4 [days]，$D_{irrad}$ = 照射天數。
 
-$$LAI\_Efficiency = \min\left(1, \left(\frac{LAI}{LAI_{healthy}}\right)^n\right)$$
+**g. 非線性因子抑制 $\eta_{nonlin}$**（Hill 函數）：
+$$\eta_{nonlin} = \frac{1}{1 + (Nonlin / K_{nonlin})^{n_{nonlin}}}$$
+其中 $K_{nonlin}$ = 800，$n_{nonlin}$ = 1.5，$Nonlin$ = Gompertz 非線性因子（見方程式 7）。
 
-**文獻**：受損植物（低 LAI）的光合能力下降，碳骨架供應不足。Wang et al. (2022) 在葡萄實驗中證實，減少葉面積的碳源限制會顯著降低花青素累積。Zhao et al. (2022) 進一步指出，光合產物減少會限制碳、氮代謝物的供應，而這些正是花青素合成的前體物質。
+**h. Stress 抑制 $\eta_{Stress}$**：
+$$\eta_{Stress} = 1 - \frac{max_{inhib} \times Stress^{n_s}}{K_s^{n_s} + Stress^{n_s}}$$
+其中 $max_{inhib}$ = 0.8，$K_s$ = 800，$n_s$ = 1.5。
+
+**i. 水分抑制 $\eta_{water}$**（Garnier et al., 2001; Hadacek, 2010; Ferreyra et al., 2021）：
+$$\eta_{water} = 1 - max_w \times \exp\left(-\exp\left(-k_w \times (LDMC - T_w)\right)\right)$$
+其中 $max_w$ = 0.6（最大抑制），$k_w$ = 50（陡峭度），$T_w$ = 0.068（閾值）。
+
+**j. 自然降解**：
+$$Degradation = k_{deg} \times Anth$$
+其中 $k_{deg}$ = 3.02×10⁻⁶ [s⁻¹]。
+
+**k. ROS 消耗 $C_{ROS}$**（Gould, 2004; Xu & Rothstein, 2018; Cerqueira et al., 2023）：
+$$C_{ROS} = k_{cons} \times f_{amp} \times Anth \times \frac{ROS^{n_c}}{K_{ROS}^{n_c} + ROS^{n_c}}$$
+其中 $k_{cons}$ = 1.0×10⁻⁶，$K_{ROS}$ = 500，$n_c$ = 2.0。
+
+消耗放大因子 $f_{amp}$（使用 softplus 軟閾值）：
+$$x = scale \times \ln(1 + e^{(Nonlin - center)/scale})$$
+$$f_{amp} = 1 + k_{amp} \times \frac{x^2}{K_{amp}^2 + x^2}$$
+其中 $center$ = 200，$scale$ = 15，$k_{amp}$ = 12，$K_{amp}$ = 20。
 
 2.5.5 模型參數總表
 
@@ -885,6 +912,46 @@ dw_fw_ratio_max
 
 -
 
+acute_center
+
+急性傷害軟閾值中心
+
+50.0
+
+-
+
+acute_scale
+
+急性傷害過渡寬度
+
+10.0
+
+-
+
+acute_k
+
+急性傷害最大效應
+
+9.0
+
+-
+
+acute_K
+
+急性傷害 Hill 半飽和常數
+
+120.0
+
+-
+
+acute_n
+
+急性傷害 Hill 係數
+
+2.0
+
+-
+
 (M) 環境條件參數
 
 參數符號
@@ -949,15 +1016,21 @@ $$S_{anth} = \frac{dAnth}{dt} \times C_{cost}$$
 
 其中 $C_{cost} = 10$ [kg C / kg Anth]，表示每合成 1 kg 花青素需消耗 10 kg 碳骨架（基於苯丙烷途徑的化學計量估算）。
 
-**(3) SLA 基礎值與衰老係數**
+**(3) 比葉面積 SLA 計算**
 
-方程式 (5) 中的 $SLA_{base}$ 繼承自 Sun et al. (2025) 模型的動態計算：
+方程式 (5) 中的 SLA 採用 Sun et al. (2025) 模型原式，為光照與濕度的函數：
 
-$$SLA_{base} = SLA_{max} \times \exp(-k_{SLA} \times X_d)$$
+$$SLA = SLA_{ref} \times f_I \times f_{X_h}$$
 
-其中 $SLA_{max} = 0.1$ [m²/g]，$k_{SLA} = 0.5$ [m²/kg]。
+其中：
+- $SLA_{ref}$ = 47.93 [m² kg⁻¹]（參考比葉面積）
+- $f_I = \frac{1}{1 + \beta_I \times (I_{a,ref} - I_{a,pl})}$（光響應因子）
+- $f_{X_h} = \frac{1}{1 + \beta_{X_h} \times (X_{h,ref} - X_h)}$（濕度響應因子）
+- $\beta_I$ = -4.74×10⁻³，$I_{a,ref}$ = 50.3 W/m²
+- $\beta_{X_h}$ = 0.912，$X_{h,ref}$ = 0.75
+- $I_{a,pl}$ = $I_a / LAI$（單位葉面積吸收光照）
 
-衰老係數 $k_{senescence}$ 隱含於 Sun 模型的 LAI 動態中，約為 $5 \times 10^{-7}$ [1/s]。
+LAI 動態直接由 Sun 模型 Eq. 9 給出：$dLAI/dt = dX_d/dt \times (1 - \sigma_r) \times SLA$。
 
 **(4) UVA 照射時間函數**
 
@@ -1028,6 +1101,138 @@ $$Anth_{ppm} = \frac{Anth^*}{FW_{total}} \times 10^6$$
 | 最大步長 | 300 秒 | 確保 UVA 開/關切換被正確捕捉 |
 | 時間單位 | 秒 (s) | 所有速率常數均以秒為單位 |
 | 模擬時段 | Day 14 至 Day 35 | 共 21 天，1,814,400 秒 |
+
+**(9) 冠層光合速率計算 (A_canopy)**
+
+本模型的碳同化計算繼承自 Sun et al. (2025) 萵苣生長模型，此處提供完整公式供獨立重現。
+
+**a. 葉片層級光飽和光合速率 (A_L_sat)**
+
+$$A_{L,sat} = \min(A_{L,cn}, A_{L,mm}) + \frac{R_d / LAI}{\alpha}$$
+
+其中：
+- $A_{L,cn}$ = 擴散受限光合速率 [mol CO₂ m⁻² s⁻¹]
+- $A_{L,mm}$ = 葉肉細胞生化受限光合速率 [mol CO₂ m⁻² s⁻¹]
+- $R_d$ = 暗呼吸速率 [mol CO₂ m⁻² s⁻¹]
+- $\alpha$ = 碳利用效率 = 0.68
+
+**b. 擴散受限光合速率 (A_L,cn)**
+
+$$A_{L,cn} = \rho_{CO_2} \times \frac{X_c - \Gamma}{r_{CO_2}}$$
+
+其中：
+- $\rho_{CO_2} = 1.98 \times \frac{273.15}{T_c + 273.15}$ [kg m⁻³]（CO₂ 密度）
+- $X_c$ = CO₂ 濃度 [ppm]
+- $\Gamma = 40 \times 2^{(T_c-20)/10}$ [ppm]（CO₂ 補償點）
+- $r_{CO_2} = r_s + r_b + r_c + r_t$ [s m⁻¹]（總阻抗）
+
+**c. 氣孔阻抗 (r_s)**
+
+$$r_s = \zeta \times r_{H_2O,min} \times f_I \times f_{T_c} \times f_{X_c} \times f_{X_h}$$
+
+其中：
+- $\zeta$ = 1.6（H₂O/CO₂ 擴散係數比）
+- $r_{H_2O,min}$ = 82 [s m⁻¹]
+- $f_I = \frac{I_a/(2 \cdot LAI) + 4.3}{I_a/(2 \cdot LAI) + 0.54}$（光響應因子）
+- $f_{T_c} = 1 + 0.023 \times (T_c - 24.5)^2$（溫度因子，日間）
+- $f_{X_c} = 1 + 6.1 \times 10^{-7} \times (X_c - 200)^2$（若 $X_c < 1100$）
+- $f_{X_h} = \frac{4}{(1 + 255 \times e^{-0.0054 \times e_c})^{0.25}}$（濕度因子）
+- $e_c = e_s \times (1 - X_h)$，$e_s = 10^{2.7857 + 7.5 T_c / (237.3 + T_c)}$ [Pa]（飽和水氣壓）
+
+**c'. 邊界層、葉肉與傳輸阻抗 (r_b, r_c, r_t)**
+
+$$r_b = Le^{0.67} \times 1174 \times l_f^{0.5} / (l_f \times |T_{leaf} - T_{air}| + 207 \times v_a^2)^{0.25}$$
+
+$$r_c = \max(c_{rc,1} \times T_c^2 + c_{rc,2} \times T_c + c_{rc,3}, 10)$$
+
+$$r_t = 50 \text{ [s m}^{-1}\text{]}$$（固定傳輸阻抗）
+
+參數值：
+- $Le$ = 1.47（Lewis 數）
+- $l_f$ = 0.1 [m]（葉片特徵長度）
+- $v_a$ = 0.09 [m s⁻¹]（空氣流速）
+- $c_{rc,1}$ = 0.315，$c_{rc,2}$ = -27.35，$c_{rc,3}$ = 790.7
+
+**模型假設**：本研究假設葉片溫度 $T_{leaf}$ 近似等於空氣溫度 $T_{air}$（即 $|T_{leaf} - T_{air}| \approx 0$），此時 $r_b$ 簡化為：
+
+$$r_b \approx Le^{0.67} \times 1174 \times l_f^{0.5} / (207 \times v_a^2)^{0.25}$$
+
+在標準條件下 $r_b \approx 330$ [s m⁻¹]。環境條件固定為：$T_c$ = 25°C（日間）/ 18°C（夜間），CO₂ = 1000 ppm，RH = 60%。
+
+**d. 葉肉細胞生化受限光合速率 (A_L,mm)**
+
+$$A_{L,mm} = M_{CO_2} \times \frac{J_{max}}{4}$$
+
+其中 $M_{CO_2}$ = 44×10⁻³ [kg mol⁻¹]，$J_{max}$ 為電子傳遞速率：
+
+$$J_{max} = J_{max,25} \times \frac{e^{E_J(T_K-298.15)/(T_K \cdot R_g \cdot 298.15)} \times (1 + e^{(cS \cdot 298.15 - cH)/(R_g \cdot 298.15)})}{1 + e^{(cS \cdot T_K - cH)/(R_g \cdot T_K)}}$$
+
+參數值：$J_{max,25}$ = 210.15 [μmol m⁻² s⁻¹]，$E_J$ = 3.7×10⁴ [J mol⁻¹]，$cH$ = 2.2×10⁵ [J mol⁻¹]，$cS$ = 710 [J mol⁻¹ K⁻¹]。
+
+**e. 量子效率 (ε)**
+
+$$\varepsilon = \varepsilon_0 \times \frac{X_c - \Gamma}{X_c + 2\Gamma}$$
+
+其中 $\varepsilon_0$ = 17×10⁻⁹ [mol CO₂ μmol⁻¹ photon]。
+
+**f. 冠層積分 — 三點高斯積分法**
+
+冠層光合速率 $A_C$ 使用三點高斯積分：
+
+$$A_C = A_{L,C} \times LAI$$
+
+$$A_{L,C} = \frac{A_L(l_1) + 1.6 \times A_L(l_2) + A_L(l_3)}{3.6}$$
+
+其中積分節點 $l_1 = (0.5 - \sqrt{0.15}) \times LAI$，$l_2 = 0.5 \times LAI$，$l_3 = (0.5 + \sqrt{0.15}) \times LAI$。
+
+各層葉片光合速率：
+
+$$A_L(l) = A_{L,sat} \times \left(1 - \exp\left(-\frac{\varepsilon \times PAR_a(l)}{A_{L,sat}}\right)\right)$$
+
+各層吸收 PAR：
+
+$$PAR_a(l) = k_{PAR} \times (1 - cr_{PAR}) \times I \times \sigma_{PAR} \times e^{-k_{PAR} \times l}$$
+
+參數值：$k_{PAR}$ = 0.9，$cr_{PAR}$ = 0.07，$\sigma_{PAR}$ = 0.5。
+
+**g. 暗呼吸 (R_d)**
+
+$$R_d = (c_{Rd,sh} \times (1 - \sigma_r) + c_{Rd,r} \times \sigma_r) \times X_d \times Q_{10,Rd}^{(T_c-25)/10}$$
+
+參數值：$c_{Rd,sh}$ = 3.47×10⁻⁷，$c_{Rd,r}$ = 1.16×10⁻⁷，$Q_{10,Rd}$ = 2.0。
+
+shoot/root 比例：$\sigma_r = \max(0.05, \min(0.35, -0.026 \times \ln(X_d/\rho_{plant}) - 0.076))$
+
+**h. 光照吸收 (I_a)**
+
+$$I_a = (1 - cr_I) \times I \times (1 - e^{-k_I \times LAI})$$
+
+參數值：$cr_I$ = 0.22，$k_I$ = 0.48。
+
+**i. 淨同化與碳緩衝**
+
+淨同化項（方程式 1-3 的碳源項）：
+
+$$Net = \alpha \times A_C \times h_{buf} - R_d$$
+
+其中 $h_{buf}$ 為碳緩衝調節因子：當 $C_{buf} \geq C_{buf,max}$ 時，$h_{buf} = \min\left(\frac{R_d + RGR_{max} \cdot X_d / \beta}{\alpha \cdot A_C}, 1\right)$，否則 $h_{buf} = 1$。
+
+$C_{buf,max} = \sigma_{buf} \times X_d$，$\sigma_{buf}$ = 0.2。
+
+**表 S1. Sun 模型光合參數彙整**
+
+| 參數 | 數值 | 單位 | 說明 |
+|------|------|------|------|
+| $\alpha$ | 0.68 | - | 碳利用效率 |
+| $\beta$ | 0.8 | - | 碳分配效率 |
+| $J_{max,25}$ | 210.15 | μmol m⁻² s⁻¹ | 25°C 電子傳遞速率 |
+| $\varepsilon_0$ | 17×10⁻⁹ | mol μmol⁻¹ | 量子效率基值 |
+| $\Gamma_{20}$ | 40 | ppm | 20°C CO₂ 補償點 |
+| $r_{H_2O,min}$ | 82 | s m⁻¹ | 最小氣孔阻抗 |
+| $k_{PAR}$ | 0.9 | - | PAR 消光係數 |
+| $k_I$ | 0.48 | - | 短波輻射消光係數 |
+| $SLA_{ref}$ | 47.93 | m² kg⁻¹ | 參考比葉面積 |
+| $RGR_{max,20}$ | 1.54×10⁻⁶ | s⁻¹ | 20°C 最大相對生長速率 |
 
 **程式碼可用性**：完整的 Python 實作程式碼 `simulate_uva_model_v10.py` 及參數設定檔 `model_config.py` 已於 GitHub 開源發布，網址為 [待填寫]。程式碼包含所有參數、輔助函數及驗證腳本，可直接執行重現本研究的所有模擬結果。
 
@@ -1368,7 +1573,7 @@ García-Macías, P., et al. (2007). Changes in the Flavonoid and Phenolic Acid C
 
 Gould, K.S. (2004). Nature's Swiss Army Knife: The Diverse Protective Roles of Anthocyanins in Leaves. Journal of Biomedicine and Biotechnology, 2004(5), 314-320. DOI: 10.1155/S1110724304406147
 
-Hadacek, F., Kreutzer, S., & Göhler, T. (2010). Plant secondary metabolites as defense systems against abiotic stresses: a comprehensive analysis of low-dose effects. Dose-Response, 9(1), 60-75. DOI: 10.2203/dose-response.09-028.Hadacek
+Hadacek, F., Bachmann, G., Engelmeier, D., & Chobot, V. (2010). Hormesis and a Chemical Raison D'être for Secondary Plant Metabolites. Dose-Response, 9(1), 79-116. DOI: 10.2203/dose-response.09-028.Hadacek
 
 Hideg, E., Jansen, M.A.K., & Strid, A. (2013). UV-B exposure, ROS, and stress: inseparable companions or loosely linked associates? Trends in Plant Science, 18(2), 107-115. DOI: 10.1016/j.tplants.2012.09.003
 
@@ -1450,4 +1655,4 @@ Czégény, G., Mátai, A., & Hideg, É. (2016). UV-B effects on leaves—Oxidati
 
 Nitschke, S., et al. (2016). Circadian Stress Regimes Affect the Circadian Clock and Cause Jasmonic Acid-Dependent Cell Death in Cytokinin-Deficient Arabidopsis Plants. The Plant Cell, 28(7), 1616-1639. DOI: 10.1105/tpc.16.00016
 
-Jiménez, A., Sevilla, F., & Martí, M.C. (2023). The Influence of Circadian Rhythm on the Activity of Oxidative Stress Enzymes. International Journal of Molecular Sciences, 23(22), 14275. DOI: 10.3390/ijms232214275
+Budkowska, M., Cecerska-Heryć, E., Marcinowska, Z., Siennicka, A., & Dołęgowska, B. (2022). The Influence of Circadian Rhythm on the Activity of Oxidative Stress Enzymes. International Journal of Molecular Sciences, 23(22), 14275. DOI: 10.3390/ijms232214275

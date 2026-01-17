@@ -1,42 +1,86 @@
-# 交接狀態 (HANDOFF_STATUS)
+# Handoff Status
 
-**最後更新**: 2026-01-15
-**當前版本**: v10.39
+**Last Updated**: 2026-01-17
+**Current Version**: v10.39
 
 ---
 
-## 核心公式 (與程式碼 100% 一致)
+## Core Formulas (100% Consistent with Code)
 
-### 1. Gompertz 非線性因子
-
-```python
-# simulate_uva_model_v10.py 第 857-867 行
-# 參數: threshold=10.5, max_factor=250.0, steepness=0.5
-def nonlinear_damage_factor(hours, p):
-    if not p.use_gompertz:
-        return 1.0
-    exponent = -p.gompertz_steepness * (hours - p.gompertz_threshold)
-    exponent = np.clip(exponent, -50, 50)
-    factor = 1.0 + p.gompertz_max_factor * np.exp(-np.exp(exponent))
-    return factor
-```
-
-### 2. 花青素合成效率抑制 (Hill 函數)
+### 1. Gompertz Nonlinear Factor
 
 ```python
-# simulate_uva_model_v10.py 第 765-797 行
-# 參數: K=800.0, n=1.5
-def calculate_nonlin_anth_efficiency(nonlinear_factor, p):
-    K = 800.0    # 半效常數
-    n = 1.5      # Hill 係數
-    efficiency = 1.0 / (1.0 + (nonlinear_factor / K) ** n)
-    return efficiency
+nonlinear_factor = 1 + max_factor * np.exp(-np.exp(-steepness * (hours - threshold)))
 ```
 
-### 效率值對照表
+Parameters:
+- `threshold = 10.5` hours
+- `max_factor = 250.0`
+- `steepness = 0.5`
 
-| 每日時數 | nonlinear_factor | 效率 |
-|----------|------------------|------|
+### 2. Hill Efficiency Inhibition
+
+```python
+efficiency = 1.0 / (1.0 + (nonlinear_factor / K) ** n)
+```
+
+Parameters:
+- `K = 800.0`
+- `n = 1.5`
+
+### 3. LDMC (Leaf Dry Matter Content)
+
+```python
+stress_effect = ldmc_sensitivity * Stress / (K_ldmc + Stress)
+x = softplus((nonlin - acute_center) / acute_scale) * acute_scale
+acute_factor = 1 + acute_k * x^acute_n / (acute_K^acute_n + x^acute_n)
+LDMC = base * (1 + stress_effect * acute_factor)
+```
+
+Parameters:
+- `dw_fw_ratio_base = 0.05`
+- `ldmc_stress_sensitivity = 0.45`
+- `K_ldmc = 1400`
+- `dw_fw_ratio_max = 0.080`
+- `acute_center = 50`, `acute_scale = 10`
+- `acute_k = 9`, `acute_K = 120`, `acute_n = 2`
+
+---
+
+## Simulation Results (v10.39)
+
+### Training Set (Tolerance: 5%)
+
+| Treatment | FW Obs | FW Pred | FW Error | Anth Obs | Anth Pred | Anth Error |
+|-----------|--------|---------|----------|----------|-----------|------------|
+| CK | 87.0 | 86.5 | -0.5% ✓ | 433 | 439 | +1.3% ✓ |
+| L6D6 | 91.4 | 92.5 | +1.2% ✓ | 494 | 474 | -4.0% ✓ |
+| L6D6-N | 80.8 | 84.0 | +3.9% ✓ | 493 | 475 | -3.6% ✓ |
+| VL3D12 | 67.0 | 69.4 | +3.6% ✓ | 482 | 492 | +2.0% ✓ |
+| L6D12 | 60.4 | 58.9 | -2.5% ✓ | 518 | 496 | -4.3% ✓ |
+| H12D3 | 60.6 | 61.3 | +1.2% ✓ | 651 | 651 | +0.0% ✓ |
+
+**Training: FW 6/6, Anth 6/6, Total 12/12**
+
+### Validation Set (Tolerance: 10%)
+
+| Treatment | Hours | FW Obs | FW Pred | FW Error | Anth Obs | Anth Pred | Anth Error |
+|-----------|-------|--------|---------|----------|----------|-----------|------------|
+| CK | 0h | 85.2 | 86.5 | +1.6% ✓ | 413 | 439 | +6.2% ✓ |
+| VL3D3 | 3h | 89.0 | 88.4 | -0.8% ✓ | 437 | 457 | +4.5% ✓ |
+| L6D3 | 6h | 92.2 | 89.9 | -2.5% ✓ | 468 | 473 | +1.1% ✓ |
+| M9D3 | 9h | 83.8 | 87.8 | +4.8% ✓ | 539 | 589 | +9.2% ✓ |
+| H12D3 | 12h | 62.2 | 61.3 | -1.4% ✓ | 657 | 651 | -0.9% ✓ |
+| VH15D3 | 15h | 51.3 | 51.2 | +0.0% ✓ | 578 | 532 | -7.9% ✓ |
+
+**Validation: FW 6/6 (<5%), Anth 6/6 (<10%)**
+
+---
+
+## Nonlinear Factor Reference
+
+| Hours/Day | nonlinear_factor | Efficiency |
+|-----------|------------------|------------|
 | 3h | 1.0 | 100.0% |
 | 6h | 1.0 | 100.0% |
 | 9h | 31.1 | 99.2% |
@@ -45,174 +89,74 @@ def calculate_nonlin_anth_efficiency(nonlinear_factor, p):
 
 ---
 
-## 完整模擬輸出 (python3 simulate_uva_model_v10.py)
+## File Synchronization Status
 
-```
-================================================================================
-萵苣生長與UVA效應整合模型 v10.0 (評審建議修正版)
-================================================================================
-
-v10.0 核心改動:
-  1. UVA 形態效應 (取代直接 PAR 疊加):
-     - SLA 增益: 500% (K=7.5)
-     - LAI 增益: 170% (K=7.5)
-  2. Gompertz 非線性傷害函數 (v10.0 推薦):
-     - 轉折點 (threshold): 10.5 小時
-     - 崩潰速率 (steepness): 0.5
-     - 最大倍率 (飽和上限): 250.0
-  3. ROS 穩態: 440.0
-================================================================================
-
-非線性傷害因子:
-  3h/day: factor = 1.0
-  6h/day: factor = 1.0
-  9h/day: factor = 31.1
-  12h/day: factor = 156.9
-
-CK       LAI: 9.1 endS:   0.0 avgS:  0.0 FW: 86.5g( -0.5%✓) Anth: 439( +1.3%✓) dw/fw:0.050
-L6D6     LAI: 9.5 endS:   4.3 avgS:  7.7 FW: 92.5g( +1.2%✓) Anth: 474( -4.0%✓) dw/fw:0.050
-L6D6-N   LAI: 8.9 endS:  18.9 avgS: 10.9 FW: 84.0g( +3.9%✓) Anth: 475( -3.6%✓) dw/fw:0.050
-VL3D12   LAI: 7.7 endS:   3.7 avgS: 95.1 FW: 69.4g( +3.6%✓) Anth: 492( +2.0%✓) dw/fw:0.051
-L6D12    LAI: 6.9 endS:  19.8 avgS:226.4 FW: 58.9g( -2.5%✓) Anth: 496( -4.3%✓) dw/fw:0.053
-H12D3    LAI: 8.7 endS: 260.1 avgS:261.5 FW: 61.3g( +1.2%✓) Anth: 651( +0.0%✓) dw/fw:0.068
---------------------------------------------------------------------------------
-達標: FW 6/6, Anth 6/6, Total 12/12
-
-================================================================================
-驗證實驗: 3天梯度 (Day 32-35)
-================================================================================
-批次校正因子: 1.0
-
-CK        0h/day LAI: 9.1 avgS:     0 maxS:     0 FW: 86.5g( +1.6%✓) Anth: 439( +6.2%△) dw/fw:0.050 nonlin:1.0
-VL3D3     3h/day LAI: 9.3 avgS:     3 maxS:     6 FW: 88.4g( -0.8%✓) Anth: 457( +4.5%✓) dw/fw:0.050 nonlin:1.0
-L6D3      6h/day LAI: 9.3 avgS:     6 maxS:    12 FW: 89.9g( -2.5%✓) Anth: 473( +1.1%✓) dw/fw:0.050 nonlin:1.0
-M9D3      9h/day LAI: 9.2 avgS:    27 maxS:    51 FW: 87.8g( +4.8%✓) Anth: 589( +9.2%△) dw/fw:0.050 nonlin:31.1
-H12D3    12h/day LAI: 8.7 avgS:   262 maxS:   624 FW: 61.3g( -1.4%✓) Anth: 651( -0.9%✓) dw/fw:0.068 nonlin:156.9
-VH15D3   15h/day LAI: 8.7 avgS:   739 maxS:  1486 FW: 51.2g( +0.0%✓) Anth: 532( -7.9%△) dw/fw:0.080 nonlin:226.0
---------------------------------------------------------------------------------
-驗證 FW: <5%: 6/6, <10%: 6/6, 平均誤差: 1.9%
-驗證 Anth: <5%: 3/6, <10%: 6/6, 平均誤差: 5.0%
-```
-
----
-
-## 結果表格
-
-### 訓練組 (目標: <5%)
-
-| 處理組 | FW觀測 | FW模擬 | FW誤差 | Anth觀測 | Anth模擬 | Anth誤差 |
-|--------|--------|--------|--------|----------|----------|----------|
-| CK | 87.0 | 86.5 | -0.5% ✓ | 433 | 439 | +1.3% ✓ |
-| L6D6 | 91.4 | 92.5 | +1.2% ✓ | 494 | 474 | -4.0% ✓ |
-| L6D6-N | 80.8 | 84.0 | +3.9% ✓ | 493 | 475 | -3.6% ✓ |
-| VL3D12 | 67.0 | 69.4 | +3.6% ✓ | 482 | 492 | +2.0% ✓ |
-| L6D12 | 60.4 | 58.9 | -2.5% ✓ | 518 | 496 | -4.3% ✓ |
-| H12D3 | 60.6 | 61.3 | +1.2% ✓ | 651 | 651 | +0.0% ✓ |
-
-**訓練達標: FW 6/6, Anth 6/6**
-
-### 驗證組 (目標: <10%)
-
-| 處理組 | 時數 | FW觀測 | FW模擬 | FW誤差 | Anth觀測 | Anth模擬 | Anth誤差 |
-|--------|------|--------|--------|--------|----------|----------|----------|
-| CK | 0h | 85.2 | 86.5 | +1.6% ✓ | 413 | 439 | +6.2% ✓ |
-| VL3D3 | 3h | 89.0 | 88.4 | -0.8% ✓ | 437 | 457 | +4.5% ✓ |
-| L6D3 | 6h | 92.2 | 89.9 | -2.5% ✓ | 468 | 473 | +1.1% ✓ |
-| M9D3 | 9h | 83.8 | 87.8 | +4.8% ✓ | 539 | 589 | +9.2% ✓ |
-| H12D3 | 12h | 62.2 | 61.3 | -1.4% ✓ | 657 | 651 | -0.9% ✓ |
-| VH15D3 | 15h | 51.3 | 51.2 | +0.0% ✓ | 578 | 532 | -7.9% ✓ |
-
-**驗證達標: FW 6/6, Anth 6/6**
-
----
-
-## 優化分析結果 (v10.39, UVA 11 W/m²)
-
-### 最佳策略 (鮮重不減 ≥-5%，花青素總量最高)
-
-| 排名 | 小時/天 | 天數 | FW (g) | Anth (μg/g) | FW變化 | Anth變化 | 總量變化 |
-|------|---------|------|--------|-------------|--------|----------|----------|
-| **1** | **9h** | **5d** | **88.1** | **591** | **+1.4%** | **+32.5%** | **+34.3%** |
-| 2 | 9h | 6d | 87.8 | 590 | +1.1% | +32.4% | +33.8% |
-| 3 | 9h | 4d | 87.9 | 585 | +1.2% | +31.3% | +32.9% |
-| 4 | 9h | 7d | 87.0 | 586 | +0.2% | +31.4% | +31.7% |
-| 5 | 9h | 3d | 87.8 | 566 | +1.0% | +27.0% | +28.3% |
-
-**最佳推薦：9h/day × 5天 → 花青素總量 +34.3%，鮮重 +1.4%**
-
-### 關鍵發現
-
-1. **9h/day 是最佳每日時數** - 在 Gompertz 轉折點 (10.5h) 之前，獲得最大效益
-2. **5 天是最佳天數** - 平衡誘導效果與累積損傷
-3. **6h/day 也有效但效益較低** - 花青素僅 +7.5%
-4. **12h/day 損害過大** - FW 損失 >25%，不建議
-
-### 優化熱力圖數據
-
-| 時數\天數 | 3d | 4d | 5d | 6d | 7d | 8d | 9d | 10d | 12d |
-|-----------|----|----|----|----|----|----|----|----|-----|
-| 3h FW變化 | +1.5% | +2.1% | +2.7% | +3.1% | +3.3% | +2.8% | +1.3% | -2.1% | -20.5% |
-| 6h FW變化 | +2.6% | +3.8% | +4.8% | +5.4% | +5.6% | +4.6% | +1.7% | -4.7% | -32.3% |
-| 9h FW變化 | +1.0% | +1.2% | +1.4% | +1.1% | +0.2% | -1.9% | -6.1% | -14.0% | -39.7% |
-| 12h FW變化 | -25.1% | -29.2% | -32.4% | -35.5% | -38.6% | -42.0% | -46.2% | -51.6% | -61.8% |
-
----
-
-## 版本歷程
-
-| 版本 | 效率函數 | 說明 |
-|------|----------|------|
-| v10.33 | 非對稱高斯 | center=70, 9h 最低 |
-| v10.37 | sigmoid | center=200, 只抑制 >200 |
-| **v10.39** | **Hill** | **K=800, n=1.5, 單調遞減** |
-
----
-
-## 圖檔狀態
-
-| 圖號 | 檔名 | 說明 | 狀態 |
-|------|------|------|------|
-| Fig 9 | fig9_lai_vulnerability.png | LAI 脆弱性 | ✓ 已更新 |
-| Fig 10 | fig10_nonlinear_factor.png | Gompertz 因子 | ✓ 已更新 |
-| Fig 11 | fig11_model_validation.png | 訓練組 FW | ✓ 已更新 |
-| Fig 12 | fig12_stress_dynamics.png | 訓練組 Anth | ✓ 已更新 |
-| Fig 13 | fig13_validation_fw.png | 驗證組 FW | ✓ 已更新 |
-| Fig 14 | fig14_validation_anth.png | 驗證組 Anth | ✓ 已更新 |
-| Fig 15 | fig15_validation_scatter.png | 散點圖 | ✓ 已更新 |
-| Fig 16 | **fig16_hill_efficiency.png** | Hill 效率函數 | ✓ 已更新 |
-| Fig 17 | fig17_system_dynamics.png | 系統方塊圖 | ✓ 已更新 |
-| Fig 18 | fig18_hormesis_3d.png | 3D 曲面圖 | ✓ 已更新 |
-| Fig 19 | fig3/4_sensitivity.png | 敏感性分析 | ✓ 已更新 |
-| Fig 20 | **fig20_optimization_heatmap.png** | 優化熱力圖 | ✓ 已更新 |
-
----
-
-## 檔案狀態
-
-| 檔案 | 狀態 |
-|------|------|
+| File | Status |
+|------|--------|
 | simulate_uva_model_v10.py | v10.39 ✓ |
-| CLAUDE.md | v3.0 ✓ |
-| HANDOFF_STATUS.md | 已同步 ✓ |
-| MODEL_DESIGN_NOTES.md | 已同步 ✓ |
-| README.md | 已同步 ✓ |
+| model_config.py | Synchronized ✓ |
+| lettuce_uva_carbon_complete_model.py | v7.1 ✓ |
+| CLAUDE.md | v3.0 English ✓ |
+| HANDOFF_STATUS.md | Synchronized ✓ |
+| MODEL_DESIGN_NOTES.md | Synchronized ✓ |
+| README.md | English ✓ |
 | generate_paper_figures.py | v10.39 ✓ |
 | optimize_uva_strategy.py | 11 W/m² ✓ |
-| 紅葉萵苣UVA...論文_v5.txt | **2026-01-15 新增 2.5.6 實作章節** ✓ |
 
 ---
 
-## 2026-01-15 更新記錄
+## Key Parameters Summary
 
-### 論文新增章節 2.5.6「模型實作與輸出換算」
+### UVA Morphological Effect
+- `uva_sla_enhancement = 5.0`
+- `K_uva_sla = 7.5` W/m²
+- `uva_lai_boost = 1.70`
+- `K_uva_lai = 7.5` W/m²
 
-補充了可重現性所需的完整實作細節：
+### ROS Dynamics
+- `k_ros_production = 0.010`
+- `k_ros_clearance = 5e-4`
 
-1. **Stress 生長抑制函數** - Michaelis-Menten 形式，α=0.85, K=50
-2. **花青素合成的碳消耗** - S_anth = dAnth/dt × C_cost，C_cost=10
-3. **SLA 基礎值與衰老係數** - 繼承自 Sun 模型
-4. **UVA 照射時間函數** - 分段常數函數定義
-5. **DW/FW 比例計算 (LDMC)** - 含 softplus 急性傷害因子
-6. **輸出換算公式** - X_d→FW, Anth→ppm 完整公式
-7. **初始條件表** - 六個狀態變量初始值
-8. **數值求解器設定** - RK45, max_step=300s
+### Stress Damage
+- `stress_damage_coeff = 1.6e-7`
+- `A_vulnerability = 8.5e7`
+- `k_vulnerability = 2.0`
+- `k_circadian = 3.0e-6`
+- `n_circadian = 2.0`
+
+### Stress Decay & Growth Inhibition
+- `k_stress_decay = 2.14e-5` (half-life ≈ 9 hours)
+- `stress_photosynthesis_inhibition = 0.85`
+- `K_stress = 50.0`
+
+### Anthocyanin Synthesis
+- `base_anth_rate_light = 6.35e-10`
+- `V_max_anth = 2.75e-9`
+- `K_stress_anth = 100.0`
+- `k_deg = 3.02e-6`
+
+### Environment
+- `I_day = 57` W/m² (PPFD 130 μmol/m²/s equivalent)
+- `I_UVA = 11` W/m²
+- `plant_density = 36` plants/m²
+
+---
+
+## Update History
+
+### 2026-01-17
+- Converted all code comments to English
+- Updated README.md, CLAUDE.md, HANDOFF_STATUS.md to English
+- Removed unnecessary test/tune files
+- Prepared for GitHub commit
+
+### 2026-01-16
+- Fixed DOI bibliography errors (Jiménez → Budkowska)
+- Added complete A_canopy formulas to paper
+- Expanded equation (8) with 11 sub-formulas
+- Added acute factor parameters to Table 4
+
+### 2026-01-14
+- v10.39: Hill efficiency function (K=800, n=1.5)
+- Replaced sigmoid with monotonically decreasing Hill function
+- All 12/12 targets achieved

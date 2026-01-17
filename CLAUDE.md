@@ -1,75 +1,75 @@
-# Claude Code 工作守則 v3.0
+# Claude Code Guidelines v3.0
 
-**核心原則: 再現性與一致性**
+**Core Principle: Reproducibility & Consistency**
 
 ---
 
-## 0. 最重要原則：再現性要求
+## 0. Most Important Principle: Reproducibility Requirements
 
-### 嚴格禁止：
-1. **禁止硬湊結果** - 不可為了讓數字達標而隨意修改參數
-2. **禁止幻覺** - 文件記錄必須與程式碼 100% 一致
-3. **禁止硬閾值** - 所有機制必須是連續函數
+### Strictly Prohibited:
+1. **No result manipulation** - Do not arbitrarily modify parameters to match target values
+2. **No hallucinations** - Documentation must be 100% consistent with code
+3. **No hard thresholds** - All mechanisms must use continuous functions
 
-### 再現性驗證流程：
-修改任何參數或公式後，必須執行：
+### Reproducibility Verification Process:
+After modifying any parameters or formulas, execute:
 ```bash
 python3 simulate_uva_model_v10.py
 ```
-並將**完整輸出**記錄到 HANDOFF_STATUS.md
+Record the **complete output** in HANDOFF_STATUS.md
 
-### 文件同步規則：
-1. 程式碼中的公式 = HANDOFF_STATUS.md 中的公式 = MODEL_DESIGN_NOTES.md 中的公式
-2. 程式碼中的參數值 = 文件中的參數值
-3. 模擬輸出數值 = 文件中記錄的數值
+### Document Synchronization Rules:
+1. Formulas in code = Formulas in HANDOFF_STATUS.md = Formulas in MODEL_DESIGN_NOTES.md
+2. Parameter values in code = Parameter values in documentation
+3. Simulation output values = Values recorded in documentation
 
-**違反再現性 = 無效修改**
-
----
-
-## 1. 開始新聊天時
-
-**必須依序執行：**
-1. 讀取 `CLAUDE.md` - 了解工作守則
-2. 讀取 `HANDOFF_STATUS.md` - 了解當前版本、參數、模擬結果
-3. 讀取 `MODEL_DESIGN_NOTES.md` - 了解模型機制
-4. **運行一次驗證**：`python3 simulate_uva_model_v10.py`
-5. **比對輸出**與文件記錄是否一致
-
-如果不一致，必須先修正文件再進行其他工作。
+**Violating reproducibility = Invalid modification**
 
 ---
 
-## 2. 當前版本狀態 (v10.39)
+## 1. When Starting a New Chat
 
-### 核心公式
+**Must execute in order:**
+1. Read `CLAUDE.md` - Understand guidelines
+2. Read `HANDOFF_STATUS.md` - Understand current version, parameters, simulation results
+3. Read `MODEL_DESIGN_NOTES.md` - Understand model mechanisms
+4. **Run verification once**: `python3 simulate_uva_model_v10.py`
+5. **Compare output** with documented records for consistency
 
-**Gompertz 非線性因子：**
+If inconsistent, documentation must be corrected before other work.
+
+---
+
+## 2. Current Version Status (v10.39)
+
+### Core Formulas
+
+**Gompertz Nonlinear Factor:**
 ```python
 # threshold=10.5, max_factor=250, steepness=0.5
 nonlinear_factor = 1 + max_factor * np.exp(-np.exp(-steepness * (hours - threshold)))
 ```
 
-**花青素合成效率抑制 (Hill 函數)：**
+**Anthocyanin Synthesis Efficiency Inhibition (Hill Function):**
 ```python
 # K=800, n=1.5
 efficiency = 1.0 / (1.0 + (nonlinear_factor / K) ** n)
 ```
 
-### 效率值對照表
-| 每日時數 | nonlinear_factor | 效率 |
-|----------|------------------|------|
+### Efficiency Reference Table
+| Hours/Day | nonlinear_factor | Efficiency |
+|-----------|------------------|------------|
 | 3h | 1.0 | 100.0% |
 | 6h | 1.0 | 100.0% |
 | 9h | 31.1 | 99.2% |
 | 12h | 156.9 | 92.0% |
 | 15h | 226.0 | 86.9% |
 
-### 實際模擬結果 (必須與文件一致)
+### Actual Simulation Results (Must match documentation)
 
-**訓練組：**
-| 處理組 | FW觀測 | FW模擬 | FW誤差 | Anth觀測 | Anth模擬 | Anth誤差 |
-|--------|--------|--------|--------|----------|----------|----------|
+**Training Set:**
+| Treatment | FW Obs | FW Pred | FW Error | Anth Obs | Anth Pred | Anth Error |
+|-----------|--------|---------|----------|----------|-----------|------------|
 | CK | 87.0 | 86.5 | -0.5% | 433 | 439 | +1.3% |
 | L6D6 | 91.4 | 92.5 | +1.2% | 494 | 474 | -4.0% |
 | L6D6-N | 80.8 | 84.0 | +3.9% | 493 | 475 | -3.6% |
@@ -77,9 +77,9 @@ efficiency = 1.0 / (1.0 + (nonlinear_factor / K) ** n)
 | L6D12 | 60.4 | 58.9 | -2.5% | 518 | 496 | -4.3% |
 | H12D3 | 60.6 | 61.3 | +1.2% | 651 | 651 | +0.0% |
 
-**驗證組：**
-| 處理組 | FW觀測 | FW模擬 | FW誤差 | Anth觀測 | Anth模擬 | Anth誤差 |
-|--------|--------|--------|--------|----------|----------|----------|
+**Validation Set:**
+| Treatment | FW Obs | FW Pred | FW Error | Anth Obs | Anth Pred | Anth Error |
+|-----------|--------|---------|----------|----------|-----------|------------|
 | CK | 85.2 | 86.5 | +1.6% | 413 | 439 | +6.2% |
 | VL3D3 | 89.0 | 88.4 | -0.8% | 437 | 457 | +4.5% |
 | L6D3 | 92.2 | 89.9 | -2.5% | 468 | 473 | +1.1% |
@@ -89,9 +89,9 @@ efficiency = 1.0 / (1.0 + (nonlinear_factor / K) ** n)
 
 ---
 
-## 3. 禁止硬閾值
+## 3. No Hard Thresholds
 
-### 禁止的寫法：
+### Prohibited patterns:
 ```python
 if hours > 6:
     damage = high_damage
@@ -99,45 +99,45 @@ if hours > 6:
 circ = 3.8 if is_night else 1.0
 ```
 
-### 正確的寫法：
+### Correct patterns:
 ```python
-# 連續 Hill 函數
+# Continuous Hill function
 efficiency = 1.0 / (1.0 + (x / K) ** n)
 
-# 連續 Gompertz
+# Continuous Gompertz
 factor = 1 + max_factor * exp(-exp(-k * (hours - threshold)))
 ```
 
 ---
 
-## 4. Token 快用完或結束聊天時
+## 4. When Token Limit Approaches or Ending Chat
 
-**必須執行：**
-1. 運行 `python3 simulate_uva_model_v10.py` 獲取完整輸出
-2. 更新 `HANDOFF_STATUS.md`，包含：
-   - 當前版本號
-   - 所有公式（與程式碼完全一致）
-   - 所有參數值
-   - 完整模擬結果表格
-3. 同步更新 `MODEL_DESIGN_NOTES.md`
-
----
-
-## 5. 文件結構
-
-| 文件 | 用途 |
-|------|------|
-| `simulate_uva_model_v10.py` | 主模型 (v10.39) |
-| `model_config.py` | 處理組設定與目標值 |
-| `CLAUDE.md` | 工作守則 (本文件) |
-| `HANDOFF_STATUS.md` | 版本狀態、公式、參數、結果 |
-| `MODEL_DESIGN_NOTES.md` | 模型機制說明 |
+**Must execute:**
+1. Run `python3 simulate_uva_model_v10.py` to get complete output
+2. Update `HANDOFF_STATUS.md` including:
+   - Current version number
+   - All formulas (exactly matching code)
+   - All parameter values
+   - Complete simulation results table
+3. Synchronize `MODEL_DESIGN_NOTES.md`
 
 ---
 
-## 6. 嚴格遵守
+## 5. File Structure
 
-1. **再現性優先** - 任何修改都必須可驗證、可複製
-2. **文件同步** - 程式碼與文件必須 100% 一致
-3. **禁止幻覺** - 不可捏造數據或公式
-4. **驗證先行** - 修改後必須運行驗證
+| File | Purpose |
+|------|---------|
+| `simulate_uva_model_v10.py` | Main model (v10.39) |
+| `model_config.py` | Treatment configurations and target values |
+| `CLAUDE.md` | Development guidelines (this file) |
+| `HANDOFF_STATUS.md` | Version status, formulas, parameters, results |
+| `MODEL_DESIGN_NOTES.md` | Model mechanism documentation |
+
+---
+
+## 6. Strict Compliance
+
+1. **Reproducibility first** - All modifications must be verifiable and reproducible
+2. **Document synchronization** - Code and documentation must be 100% consistent
+3. **No hallucinations** - Do not fabricate data or formulas
+4. **Verify first** - Must run verification after modifications
