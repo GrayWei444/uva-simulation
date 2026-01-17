@@ -1,129 +1,120 @@
-# Lettuce UVA Model v10.39
+# Lettuce UVA Model
 
 **A Mechanistic Model for UVA Effects on Lettuce Growth and Anthocyanin Accumulation**
 
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)]()
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
 
 ## About
 
-This repository provides a reproducible pipeline and mechanistic modeling code to analyze and optimize UVA lighting recipes for red-leaf lettuce grown in controlled-environment agriculture. The goal is to **enhance anthocyanin accumulation without yield loss** (fresh weight).
+This repository provides reproducible code for a mechanistic model that simulates UVA lighting effects on red-leaf lettuce (*Lactuca sativa* L.) grown in controlled-environment agriculture. The model predicts:
 
-The workflow consists of:
+- **Fresh weight (FW)** - Biomass accumulation under various UVA treatments
+- **Anthocyanin concentration** - Secondary metabolite induction by UVA stress
 
-1. **Screening stage**: comparing UVA vs. UVB across multiple cultivars to identify a "safe band" and a responsive cultivar.
-
-2. **Optimization stage**: exploring UVA photoperiod × duration combinations under a fixed irradiance and extrapolating responses via modeling and global search.
-
-At the core is a **six-state ODE mechanistic model** integrating UVA-driven morphogenesis, ROS production/clearance, damage–repair dynamics, ontogeny-dependent vulnerability, nonlinear amplification under long exposure, and circadian effects. Parameters are calibrated in a data-driven manner to reproduce endpoint fresh weight and anthocyanin outcomes and to capture non-monotonic (hormetic) responses.
-
----
-
-## What You Can Do With This Repo
-
-- **Reproduce training/validation results** and summary tables
-- **Generate response surfaces / heatmaps** for UVA recipes
-- **Run constrained optimization** (e.g., FW ≥ CK − 5%) to identify candidate "best" recipes
-- **Adapt the framework** to other cultivars or environments (with re-calibration)
-
----
-
-## Model Performance (v10.39)
-
-**Perfect Score**: 12/12 targets achieved (Training 6/6 + Validation 6/6)
-
-### Training Set (Tolerance: 5%)
-
-| Treatment | FW Pred | FW Obs | FW Error | Anth Pred | Anth Obs | Anth Error |
-|-----------|---------|--------|----------|-----------|----------|------------|
-| CK | 86.5g | 87.0g | -0.5% | 439 | 433 | +1.3% |
-| L6D6 | 92.5g | 91.4g | +1.2% | 474 | 494 | -4.0% |
-| L6D6-N | 84.0g | 80.8g | +3.9% | 475 | 493 | -3.6% |
-| VL3D12 | 69.4g | 67.0g | +3.6% | 492 | 482 | +2.0% |
-| L6D12 | 58.9g | 60.4g | -2.5% | 496 | 518 | -4.3% |
-| H12D3 | 61.3g | 60.6g | +1.2% | 651 | 651 | +0.0% |
-
-### Validation Set (Tolerance: 10%)
-
-| Treatment | Hours | FW Pred | FW Obs | FW Error | Anth Pred | Anth Obs | Anth Error |
-|-----------|-------|---------|--------|----------|-----------|----------|------------|
-| CK | 0h | 86.5g | 85.2g | +1.6% | 439 | 413 | +6.2% |
-| VL3D3 | 3h | 88.4g | 89.0g | -0.8% | 457 | 437 | +4.5% |
-| L6D3 | 6h | 89.9g | 92.2g | -2.5% | 473 | 468 | +1.1% |
-| M9D3 | 9h | 87.8g | 83.8g | +4.8% | 589 | 539 | +9.2% |
-| H12D3 | 12h | 61.3g | 62.2g | -1.4% | 651 | 657 | -0.9% |
-| VH15D3 | 15h | 51.2g | 51.3g | +0.0% | 532 | 578 | -7.9% |
+The goal is to **enhance anthocyanin accumulation without yield loss**.
 
 ---
 
 ## Model Architecture
 
-### State Variables
+### Six-State ODE System
 
-Six-state ODE system: `[X_d, C_buf, LAI, Anth, Stress, ROS]`
+| State Variable | Symbol | Description | Unit |
+|----------------|--------|-------------|------|
+| Dry weight | X_d | Structural biomass | kg/m² |
+| Carbon buffer | C_buf | Non-structural carbohydrates | kg/m² |
+| Leaf area index | LAI | Canopy light interception | m²/m² |
+| Anthocyanin | Anth | Secondary metabolite content | kg/m² |
+| Stress | Stress | Cumulative oxidative damage | - |
+| ROS | ROS | Reactive oxygen species | - |
 
-| Variable | Description | Unit |
-|----------|-------------|------|
-| X_d | Dry weight biomass | kg/m² |
-| C_buf | Carbon buffer | kg/m² |
-| LAI | Leaf Area Index | m²/m² |
-| Anth | Anthocyanin content | kg/m² |
-| Stress | Cumulative stress | - |
-| ROS | Reactive oxygen species | - |
+### Key Mechanisms
 
-### Base Model
-
-- **Sun et al. (2025)** lettuce growth model
-- **ODE Solver**: RK45, max_step=300s
-
-### UVA Effect Mechanisms
-
-1. **UVA Morphological Effect** - UVA promotes SLA and LAI growth (does not directly add to PAR)
-2. **ROS Dynamics** - UVA generates ROS, antioxidant system clears it
-3. **Stress Damage-Decay** - Balance between cumulative damage and natural decay
-4. **LAI Vulnerability** - Young plants are more susceptible to damage
-5. **Gompertz Nonlinearity** - Prolonged irradiation triggers antioxidant system collapse
-6. **Circadian Damage** - Nighttime irradiation causes additional stress
-7. **Anthocyanin Induction** - Stress-induced + UV direct induction
-8. **Water Inhibition** - Anthocyanin synthesis efficiency decreases under extreme stress
-9. **Hill Efficiency Inhibition** - Monotonically decreasing inhibition at high nonlinear_factor
+1. **Base growth model** - Sun et al. (2025) lettuce carbon allocation model
+2. **UVA morphological effect** - Enhanced SLA and LAI development
+3. **ROS dynamics** - Production under UVA, clearance by antioxidant system
+4. **Stress accumulation** - Damage-decay balance with circadian modulation
+5. **Gompertz nonlinearity** - Antioxidant collapse under prolonged exposure
+6. **Anthocyanin induction** - Stress-triggered biosynthesis pathway
 
 ---
 
-## Core Parameters (v10.39)
+## Model Performance
 
-### Gompertz Nonlinear Factor
+### Training Set (n=6, Tolerance: 5%)
 
+| Treatment | FW Obs (g) | FW Pred (g) | FW Error | Anth Obs | Anth Pred | Anth Error |
+|-----------|------------|-------------|----------|----------|-----------|------------|
+| CK (Control) | 87.0 | 86.5 | -0.5% | 433 | 439 | +1.3% |
+| L6D6 (6h×6d) | 91.4 | 92.5 | +1.2% | 494 | 474 | -4.0% |
+| L6D6-N (Night) | 80.8 | 84.0 | +3.9% | 493 | 475 | -3.6% |
+| VL3D12 (3h×12d) | 67.0 | 69.4 | +3.6% | 482 | 492 | +2.0% |
+| L6D12 (6h×12d) | 60.4 | 58.9 | -2.5% | 518 | 496 | -4.3% |
+| H12D3 (12h×3d) | 60.6 | 61.3 | +1.2% | 651 | 651 | +0.0% |
+
+### Validation Set (n=6, Tolerance: 10%)
+
+| Treatment | Hours/day | FW Obs (g) | FW Pred (g) | FW Error | Anth Obs | Anth Pred | Anth Error |
+|-----------|-----------|------------|-------------|----------|----------|-----------|------------|
+| CK | 0h | 85.2 | 86.5 | +1.6% | 413 | 439 | +6.2% |
+| VL3D3 | 3h | 89.0 | 88.4 | -0.8% | 437 | 457 | +4.5% |
+| L6D3 | 6h | 92.2 | 89.9 | -2.5% | 468 | 473 | +1.1% |
+| M9D3 | 9h | 83.8 | 87.8 | +4.8% | 539 | 589 | +9.2% |
+| H12D3 | 12h | 62.2 | 61.3 | -1.4% | 657 | 651 | -0.9% |
+| VH15D3 | 15h | 51.3 | 51.2 | +0.0% | 578 | 532 | -7.9% |
+
+**Result: 12/12 targets achieved** (Training 6/6 + Validation 6/6)
+
+---
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/GrayWei444/uva-simulation.git
+cd uva-simulation
+
+# Install dependencies
+pip install -r requirements.txt
 ```
-nonlinear_factor = 1 + max_factor × exp(-exp(-steepness × (hours - threshold)))
+
+### Requirements
+
+- Python 3.8+
+- NumPy
+- SciPy
+- Matplotlib
+
+---
+
+## Usage
+
+### Run Model Validation
+
+```bash
+python simulate_uva_model_v10.py
 ```
 
-| Parameter | Value |
-|-----------|-------|
-| threshold | 10.5 hours |
-| max_factor | 250.0 |
-| steepness | 0.5 |
+This runs all training and validation treatments and outputs predicted vs. observed values.
 
-| Hours/Day | nonlinear_factor |
-|-----------|------------------|
-| 3h | 1.0 |
-| 6h | 1.0 |
-| 9h | 31.1 |
-| 12h | 156.9 |
-| 15h | 226.0 |
+### Generate Paper Figures
 
-### Anthocyanin Efficiency Inhibition (Hill Function)
-
-```
-efficiency = 1 / (1 + (nonlinear_factor / K)^n)
+```bash
+python generate_paper_figures.py
 ```
 
-| Parameter | Value |
-|-----------|-------|
-| K | 800.0 |
-| n | 1.5 |
+Generates all figures used in the manuscript.
+
+### Run UVA Optimization
+
+```bash
+python optimize_uva_strategy.py
+```
+
+Searches for optimal UVA treatment protocols that maximize anthocyanin while maintaining yield.
 
 ---
 
@@ -131,67 +122,56 @@ efficiency = 1 / (1 + (nonlinear_factor / K)^n)
 
 ```
 .
-├── simulate_uva_model_v10.py          # Main model (v10.39)
-├── lettuce_uva_carbon_complete_model.py  # Sun model base
-├── model_config.py                    # Treatment configurations and targets
-├── generate_paper_figures.py          # Paper figure generation
+├── simulate_uva_model_v10.py          # Main model (6-state ODE system)
+├── lettuce_uva_carbon_complete_model.py  # Base Sun model
+├── model_config.py                    # Treatment configurations & targets
+├── generate_paper_figures.py          # Figure generation script
 ├── generate_fig20_quick.py            # Quick optimization heatmap
-├── optimize_uva_strategy.py           # Optimization script (11 W/m²)
-├── CLAUDE.md                          # Development guidelines (v3.0)
-├── HANDOFF_STATUS.md                  # Handoff status
-└── MODEL_DESIGN_NOTES.md              # Model design notes
+├── optimize_uva_strategy.py           # Optimization search
+├── requirements.txt                   # Python dependencies
+└── README.md                          # This file
 ```
 
 ---
 
-## Quick Start
+## Key Parameters
 
-### Installation
+### Gompertz Nonlinear Damage Factor
 
-```bash
-pip install numpy scipy matplotlib
+```
+nonlinear_factor = 1 + 250 × exp(-exp(-0.5 × (hours - 10.5)))
 ```
 
-### Run Simulation
+| Daily UVA (h) | Nonlinear Factor | Description |
+|---------------|------------------|-------------|
+| 3 | 1.0 | No amplification |
+| 6 | 1.0 | No amplification |
+| 9 | 31.1 | Transition zone |
+| 12 | 156.9 | Severe stress |
+| 15 | 226.0 | Near saturation |
 
-```bash
-python3 simulate_uva_model_v10.py
+### Hill Efficiency Inhibition
+
 ```
-
-### Generate Paper Figures
-
-```bash
-python3 generate_paper_figures.py
+efficiency = 1 / (1 + (nonlinear_factor / 800)^1.5)
 ```
-
-### Run Optimization
-
-```bash
-python3 optimize_uva_strategy.py
-```
-
----
-
-## Version History
-
-- **v10.39**: Monotonically decreasing Hill efficiency function (K=800, n=1.5)
-- **v10.37**: Gompertz threshold 9.5→10.5
-- **v10.33**: Continuous asymmetric Gaussian (removed)
-- **v10.9**: Water inhibition mechanism
-- **v10.0**: UVA morphological effect replaces direct PAR addition
 
 ---
 
 ## Citation
 
-If you use this model in your research, please cite the associated manuscript and the repository:
+If you use this code in your research, please cite:
 
 > Wei, C.H., Fang, W., & Huang, C.K. (2026). A Two-Stage Screening-to-Optimization Approach with Mechanistic Model Analysis: Enhancing Anthocyanin in Lettuce Without Yield Loss. *Plants* (under review).
-
-Repository: https://github.com/GrayWei444/uva-simulation
 
 ---
 
 ## License
 
-This project is for academic research purposes.
+MIT License - See [LICENSE](LICENSE) for details.
+
+---
+
+## Contact
+
+For questions or collaborations, please open an issue on this repository.
