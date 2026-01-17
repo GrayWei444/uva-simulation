@@ -1487,9 +1487,57 @@ def run_sensitivity_analysis(param_name, param_values, base_params, env_func, ta
 # ==============================================================================
 
 if __name__ == "__main__":
-    from model_config import (
-        ENV_BASE, TARGETS, SIMULATION, get_env_for_treatment
-    )
+    # ===========================================================================
+    # Embedded Configuration (for standalone execution)
+    # ===========================================================================
+
+    # Environment base settings (plant factory)
+    ENV_BASE = {
+        'light_on_hour': 6,       # Light start time (06:00)
+        'light_off_hour': 22,     # Light end time (22:00) - 16h photoperiod
+        'I_day': 57,              # Daytime shortwave radiation [W/m²]
+        'T_day': 25,              # Daytime temperature [°C]
+        'T_night': 18,            # Nighttime temperature [°C]
+        'CO2_day': 1200,          # Daytime CO2 [ppm]
+        'CO2_night': 1200,        # Nighttime CO2 [ppm]
+        'RH_day': 0.70,           # Daytime relative humidity
+        'RH_night': 0.85,         # Nighttime relative humidity
+        'plant_density': 36,      # Plant density [plants/m²]
+    }
+
+    # Simulation settings
+    SIMULATION = {
+        'days': 21,               # Simulation days after transplant
+        'transplant_offset': 14,  # Transplant on day 14 after sowing
+        'initial_fw_g': 10,       # Initial fresh weight [g/plant]
+    }
+
+    # Training set targets (observed values)
+    TARGETS = {
+        'CK':      {'FW': 87.0, 'Anth': 433},
+        'L6D6':    {'FW': 91.4, 'Anth': 494},
+        'L6D6-N':  {'FW': 80.8, 'Anth': 493},
+        'H12D3':   {'FW': 60.6, 'Anth': 651},
+        'VL3D12':  {'FW': 67.0, 'Anth': 482},
+        'L6D12':   {'FW': 60.4, 'Anth': 518},
+    }
+
+    # Treatment configurations
+    TREATMENT_CONFIGS = {
+        'CK':      {'uva_on': False},
+        'L6D6':    {'uva_on': True, 'uva_intensity': 11.0, 'uva_start_day': 29, 'uva_end_day': 35, 'uva_hour_on': 10, 'uva_hour_off': 16},
+        'L6D6-N':  {'uva_on': True, 'uva_intensity': 11.0, 'uva_start_day': 29, 'uva_end_day': 35, 'uva_hour_on': 22, 'uva_hour_off': 4},
+        'H12D3':   {'uva_on': True, 'uva_intensity': 11.0, 'uva_start_day': 32, 'uva_end_day': 35, 'uva_hour_on': 6, 'uva_hour_off': 18},
+        'VL3D12':  {'uva_on': True, 'uva_intensity': 11.0, 'uva_start_day': 23, 'uva_end_day': 35, 'uva_hour_on': 10, 'uva_hour_off': 13},
+        'L6D12':   {'uva_on': True, 'uva_intensity': 11.0, 'uva_start_day': 23, 'uva_end_day': 35, 'uva_hour_on': 10, 'uva_hour_off': 16},
+    }
+
+    def get_env_for_treatment(treatment):
+        """Get complete environment settings for a treatment."""
+        env = ENV_BASE.copy()
+        if treatment in TREATMENT_CONFIGS:
+            env.update(TREATMENT_CONFIGS[treatment])
+        return env
 
     p = UVAParams()
 
