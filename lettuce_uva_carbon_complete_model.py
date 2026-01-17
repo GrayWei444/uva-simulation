@@ -1,17 +1,18 @@
 """
-Lettuce UVA-Carbon Allocation Complete Dynamic Model
-================================
-Version: v7.1 - Supports external irradiance override
-Author: Roo & Research Team
-Date: 2025-12-11
+Lettuce Carbon Allocation Model (Base Growth Module)
+=====================================================
+Based on: Sun et al. (2025) "A mechanistic model for simulating lettuce
+          growth and resource allocation"
 
-Core Progress:
-1. Strictly following the paper, restructured the model as a [X_d, C_buf, LAI] three-state variable system.
-2. dLAI/dt implemented as an independent differential equation, removing all approximations.
-3. This file is now a pure, 100% paper-aligned importable model.
+This module implements the base lettuce growth model as a three-state ODE system:
+- X_d: Structural dry weight [kg/m²]
+- C_buf: Carbon buffer (non-structural carbohydrates) [kg/m²]
+- LAI: Leaf area index [m²/m²]
 
-Modification History:
-- v7.1 (2025-12-11): Added I_override parameter, allowing external override of irradiance (supports nighttime UVA-PAR photosynthetic contribution)
+Used as the foundation for the UVA effect model in:
+Wei, C.H., Fang, W., & Huang, C.K. (2026). A Two-Stage Screening-to-Optimization
+Approach with Mechanistic Model Analysis: Enhancing Anthocyanin in Lettuce
+Without Yield Loss. Plants (under review).
 """
 import numpy as np
 

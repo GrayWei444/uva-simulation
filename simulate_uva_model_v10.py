@@ -1851,3 +1851,141 @@ if __name__ == "__main__":
     val_anth_ok10 = sum(1 for e in val_anth_errs if e < 10)
     print(f"Validation FW: <5%: {val_fw_ok5}/6, <10%: {val_fw_ok10}/6, Mean error: {sum(val_fw_errs)/6:.1f}%")
     print(f"Validation Anth: <5%: {val_anth_ok5}/6, <10%: {val_anth_ok10}/6, Mean error: {sum(val_anth_errs)/6:.1f}%")
+
+    # =========================================================================
+    # Export results to CSV for reproducibility verification
+    # =========================================================================
+    print("\n" + "=" * 80)
+    print("Exporting results to results.csv...")
+    print("=" * 80)
+
+    # Collect all results
+    all_results = []
+
+    # Re-run training set to collect data
+    for treatment in ['CK', 'L6D6', 'L6D6-N', 'VL3D12', 'L6D12', 'H12D3']:
+        env = get_env_for_treatment(treatment)
+        target = TARGETS.get(treatment, {'FW': 0, 'Anth': 0})
+
+        fw_init_g = SIMULATION['initial_fw_g']
+        dw_init_g = fw_init_g * p.dw_fw_ratio_base
+        Xd_init = dw_init_g / 1000 * ENV_BASE['plant_density']
+        C_buf_init = Xd_init * 0.1
+        LAI_init = (dw_init_g / 0.01) * 0.04
+        fw_total_init = fw_init_g * ENV_BASE['plant_density'] / 1000
+        Anth_init = 5.0 * fw_total_init / 1e6
+        initial_state = [Xd_init, C_buf_init, LAI_init, Anth_init, 0.0, 0.0]
+
+        transplant_day = SIMULATION['transplant_offset']
+        simulation_days = SIMULATION['days']
+        t_start = transplant_day * 86400
+        harvest_hour = 6
+        t_end = (transplant_day + simulation_days) * 86400 + harvest_hour * 3600
+        t_eval_points = np.linspace(t_start, t_end, 100)
+
+        sol = solve_ivp(uva_sun_derivatives, (t_start, t_end), initial_state,
+                        args=(p, env), method='RK45', max_step=300, t_eval=t_eval_points)
+
+        if sol.success:
+            Xd_f, Cbuf_f, LAI_f, Anth_f, Stress_f, ROS_f = sol.y[:, -1]
+            uva_start = env.get('uva_start_day', 35) * 86400
+            stress_sum, stress_count = 0.0, 0
+            for i in range(len(sol.t)):
+                if sol.t[i] >= uva_start:
+                    stress_sum += sol.y[4, i]
+                    stress_count += 1
+            avg_stress = stress_sum / max(1, stress_count)
+
+            uva_hour_on = env.get('uva_hour_on', 0)
+            uva_hour_off = env.get('uva_hour_off', 0)
+            hours_daily = uva_hour_off - uva_hour_on if uva_hour_on < uva_hour_off else 24 - uva_hour_on + uva_hour_off
+            if not env.get('uva_on', False):
+                hours_daily = 0
+            nonlin_factor = nonlinear_damage_factor(hours_daily, p)
+            dw_fw_ratio = calculate_dynamic_dw_fw_ratio(avg_stress, p, nonlin_factor)
+            FW_sim = Xd_f / ENV_BASE['plant_density'] / dw_fw_ratio * 1000
+            FW_total_kg = FW_sim / 1000 * ENV_BASE['plant_density']
+            Anth_sim = Anth_f / FW_total_kg * 1e6
+
+            all_results.append({
+                'Set': 'Training',
+                'Treatment': treatment,
+                'FW_obs': target['FW'],
+                'FW_pred': round(FW_sim, 1),
+                'FW_error_pct': round((FW_sim - target['FW']) / target['FW'] * 100, 1),
+                'Anth_obs': target['Anth'],
+                'Anth_pred': round(Anth_sim, 0),
+                'Anth_error_pct': round((Anth_sim - target['Anth']) / target['Anth'] * 100, 1)
+            })
+
+    # Re-run validation set to collect data
+    for name, target in validation_targets.items():
+        hours = target['hours']
+        env = dict(ENV_BASE)
+        if hours > 0:
+            env['uva_on'] = True
+            env['uva_intensity'] = 11.0
+            env['uva_start_day'] = 32
+            env['uva_end_day'] = 35
+            env['uva_hour_on'] = 6
+            env['uva_hour_off'] = 6 + hours
+        else:
+            env['uva_on'] = False
+
+        fw_init_g = SIMULATION['initial_fw_g']
+        dw_init_g = fw_init_g * p.dw_fw_ratio_base
+        Xd_init = dw_init_g / 1000 * ENV_BASE['plant_density']
+        C_buf_init = Xd_init * 0.1
+        LAI_init = (dw_init_g / 0.01) * 0.04
+        fw_total_init = fw_init_g * ENV_BASE['plant_density'] / 1000
+        Anth_init = 5.0 * fw_total_init / 1e6
+        initial_state = [Xd_init, C_buf_init, LAI_init, Anth_init, 0.0, 0.0]
+
+        transplant_day = SIMULATION['transplant_offset']
+        simulation_days = SIMULATION['days']
+        t_start = transplant_day * 86400
+        harvest_hour = 6
+        t_end = (transplant_day + simulation_days) * 86400 + harvest_hour * 3600
+        t_eval_points = np.linspace(t_start, t_end, 100)
+
+        sol = solve_ivp(uva_sun_derivatives, (t_start, t_end), initial_state,
+                        args=(p, env), method='RK45', max_step=300, t_eval=t_eval_points)
+
+        if sol.success:
+            Xd_f, Cbuf_f, LAI_f, Anth_f, Stress_f, ROS_f = sol.y[:, -1]
+            uva_start = env.get('uva_start_day', 35) * 86400
+            stress_sum, stress_count = 0.0, 0
+            for i in range(len(sol.t)):
+                if sol.t[i] >= uva_start:
+                    stress_sum += sol.y[4, i]
+                    stress_count += 1
+            avg_stress = stress_sum / max(1, stress_count)
+
+            nonlin_factor = nonlinear_damage_factor(hours, p)
+            dw_fw_ratio = calculate_dynamic_dw_fw_ratio(avg_stress, p, nonlin_factor)
+            FW_sim = Xd_f / ENV_BASE['plant_density'] / dw_fw_ratio * 1000
+            FW_total_kg = FW_sim / 1000 * ENV_BASE['plant_density']
+            Anth_sim = Anth_f / FW_total_kg * 1e6
+
+            all_results.append({
+                'Set': 'Validation',
+                'Treatment': name,
+                'FW_obs': target['FW'],
+                'FW_pred': round(FW_sim, 1),
+                'FW_error_pct': round((FW_sim - target['FW']) / target['FW'] * 100, 1),
+                'Anth_obs': target['Anth'],
+                'Anth_pred': round(Anth_sim, 0),
+                'Anth_error_pct': round((Anth_sim - target['Anth']) / target['Anth'] * 100, 1)
+            })
+
+    # Write to CSV (without pandas dependency)
+    csv_filename = 'results.csv'
+    with open(csv_filename, 'w') as f:
+        f.write('Set,Treatment,FW_obs,FW_pred,FW_error_pct,Anth_obs,Anth_pred,Anth_error_pct\n')
+        for r in all_results:
+            f.write(f"{r['Set']},{r['Treatment']},{r['FW_obs']},{r['FW_pred']},{r['FW_error_pct']},"
+                    f"{r['Anth_obs']},{r['Anth_pred']},{r['Anth_error_pct']}\n")
+
+    print(f"\nResults exported to: {csv_filename}")
+    print("Columns: Set, Treatment, FW_obs, FW_pred, FW_error_pct, Anth_obs, Anth_pred, Anth_error_pct")
+    print(f"Total rows: {len(all_results)} (Training: 6, Validation: 6)")

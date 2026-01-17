@@ -90,7 +90,28 @@ pip install -r requirements.txt
 python simulate_uva_model_v10.py
 ```
 
-This runs all training and validation simulations and outputs predicted vs. observed values.
+This runs all training and validation simulations and exports results to `results.csv`.
+
+### Expected Output
+
+The script generates `results.csv` with the following columns:
+
+| Column | Description |
+|--------|-------------|
+| Set | "Training" or "Validation" |
+| Treatment | Treatment name (e.g., CK, L6D6, H12D3) |
+| FW_obs | Observed fresh weight (g/plant) |
+| FW_pred | Predicted fresh weight (g/plant) |
+| FW_error_pct | Fresh weight error (%) |
+| Anth_obs | Observed anthocyanin (mg/kg FW) |
+| Anth_pred | Predicted anthocyanin (mg/kg FW) |
+| Anth_error_pct | Anthocyanin error (%) |
+
+### Reproducibility Check
+
+After running the model, verify that:
+- Training set: All 6 treatments have |FW_error_pct| < 5% and |Anth_error_pct| < 5%
+- Validation set: All 6 treatments have |FW_error_pct| < 10% and |Anth_error_pct| < 10%
 
 ---
 
