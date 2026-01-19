@@ -31,6 +31,10 @@ nul
 *.png
 *.tif
 *.pdf
+paper_figures/
+
+# Figure generation script (not for public repo)
+generate_paper_figures.py
 
 # Paper drafts and Chinese documentation
 *.txt
