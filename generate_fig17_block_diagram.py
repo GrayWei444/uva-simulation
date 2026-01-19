@@ -130,7 +130,7 @@ add_pathway_label(ax, 25, 80, 'Morphological\nEffect\n(SLA↑, LAI↑)', color=c
 # UV-A → ROS (ROS production) - NEGATIVE
 draw_arrow(ax, (uva_x + 8, uva_y - 5), (ros_x - 9, ros_y + 4),
            colors['arrow_negative'], linewidth=2, connectionstyle="arc3,rad=0.15")
-add_pathway_label(ax, 25, 52, 'ROS Production\n(k_ros × I_UVA)', color=colors['arrow_negative'])
+add_pathway_label(ax, 18, 44, 'ROS Production\n(k_ros × I_UVA)', color=colors['arrow_negative'])
 
 # LAI → C_buf (Light interception) - POSITIVE
 draw_arrow(ax, (lai_x + 9, lai_y), (cbuf_x - 9, cbuf_y),
@@ -179,7 +179,7 @@ add_pathway_label(ax, 98, 45, 'decay', color=colors['arrow_neutral'])
 # LAI → LAI Vulnerability (feedback line)
 draw_arrow(ax, (lai_x - 7, lai_y - 6), (vuln_x + 5, vuln_y + 6),
            colors['arrow_neutral'], linewidth=1.5, connectionstyle="arc3,rad=0.15")
-add_pathway_label(ax, 32, 55, 'v(LAI) =\nA·exp(−k·LAI)+1', color=colors['arrow_neutral'])
+add_pathway_label(ax, 32, 62, 'v(LAI) =\nA·exp(−k·LAI)+1', color=colors['arrow_neutral'])
 
 # LAI Vulnerability → ROS (modulates damage)
 draw_arrow(ax, (vuln_x + 8, vuln_y + 6), (ros_x - 7, ros_y - 6),
