@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 Generate Fig 17: System Block Diagram for Six-State ODE Model
-- Larger fonts, no overlap
-- Pathway label colors match arrow colors
-- Decay arrow outside Stress box
+- Smaller figure for paper
+- Smaller boxes, same text size
+- Fix overlap at bottom
 """
 
 import matplotlib.pyplot as plt
@@ -11,10 +11,10 @@ import matplotlib.patches as patches
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 import numpy as np
 
-# Create figure - extra large for better readability
-fig, ax = plt.subplots(figsize=(40, 28))
-ax.set_xlim(0, 110)
-ax.set_ylim(0, 80)
+# Create figure - paper size (single column width ~3.5in, double ~7in)
+fig, ax = plt.subplots(figsize=(14, 10))
+ax.set_xlim(0, 140)
+ax.set_ylim(0, 105)
 ax.set_aspect('equal')
 ax.axis('off')
 
@@ -30,32 +30,32 @@ colors = {
     'arrow_neutral': '#4169E1',   # Royal blue
 }
 
-# Font sizes - SIGNIFICANTLY LARGER
-title_fontsize = 52
-box_fontsize = 40          # State box labels - very large
-box_detail_fontsize = 28   # Secondary text in boxes
-pathway_fontsize = 26      # Pathway labels
-legend_fontsize = 26
+# Font sizes - keep readable
+title_fontsize = 16
+box_fontsize = 14          # State box labels
+box_detail_fontsize = 11   # Secondary text in boxes
+pathway_fontsize = 10      # Pathway labels
+legend_fontsize = 10
 
 def draw_state_box(ax, x, y, width, height, label, sublabel, color, fontsize=box_fontsize):
-    """Draw a state variable box"""
+    """Draw a state variable box - SMALLER"""
     box = FancyBboxPatch((x - width/2, y - height/2), width, height,
-                         boxstyle="round,pad=0.03,rounding_size=0.8",
-                         facecolor=color, edgecolor='black', linewidth=3)
+                         boxstyle="round,pad=0.02,rounding_size=0.5",
+                         facecolor=color, edgecolor='black', linewidth=1.5)
     ax.add_patch(box)
 
     if sublabel:
-        ax.text(x, y + 1.8, label, ha='center', va='center', fontsize=fontsize, fontweight='bold')
-        ax.text(x, y - 2.2, sublabel, ha='center', va='center', fontsize=box_detail_fontsize)
+        ax.text(x, y + 2, label, ha='center', va='center', fontsize=fontsize, fontweight='bold')
+        ax.text(x, y - 2.5, sublabel, ha='center', va='center', fontsize=box_detail_fontsize)
     else:
         ax.text(x, y, label, ha='center', va='center', fontsize=fontsize, fontweight='bold')
 
 
-def draw_arrow(ax, start, end, color='black', style='->', linewidth=3, connectionstyle="arc3,rad=0"):
+def draw_arrow(ax, start, end, color='black', style='->', linewidth=2, connectionstyle="arc3,rad=0"):
     """Draw an arrow between two points"""
     arrow = FancyArrowPatch(start, end,
                            arrowstyle=style,
-                           mutation_scale=30,
+                           mutation_scale=15,
                            color=color,
                            linewidth=linewidth,
                            connectionstyle=connectionstyle)
@@ -69,167 +69,169 @@ def add_pathway_label(ax, x, y, text, fontsize=pathway_fontsize, color='#333333'
 
 
 # ============================================================
-# LAYOUT - Spread out more to avoid overlap with larger fonts
+# LAYOUT - Compact but spread out to avoid overlap
 # ============================================================
 
 # Input (left side)
-uva_x, uva_y = 12, 48
+uva_x, uva_y = 15, 60
 
-# Main state variables (spread out more)
-lai_x, lai_y = 42, 64
-cbuf_x, cbuf_y = 68, 64
-xd_x, xd_y = 94, 64
+# Main state variables - upper row
+lai_x, lai_y = 50, 85
+cbuf_x, cbuf_y = 85, 85
+xd_x, xd_y = 120, 85
 
-ros_x, ros_y = 42, 36
-stress_x, stress_y = 68, 36
-anth_x, anth_y = 94, 36
+# Middle row - stress related
+ros_x, ros_y = 50, 50
+stress_x, stress_y = 85, 50
+anth_x, anth_y = 120, 50
 
-# Damage mechanisms (bottom) - spread out more
-vuln_x, vuln_y = 28, 10
-circadian_x, circadian_y = 54, 10
-nonlin_x, nonlin_y = 82, 10
+# Damage mechanisms (bottom) - spread out horizontally
+vuln_x, vuln_y = 30, 15
+circadian_x, circadian_y = 70, 15
+nonlin_x, nonlin_y = 110, 15
 
 # ============================================================
-# DRAW STATE BOXES - Larger boxes for larger fonts
+# DRAW STATE BOXES - Smaller boxes
 # ============================================================
+
+# Box dimensions - smaller
+box_w, box_h = 18, 12
+small_box_w, small_box_h = 20, 12
 
 # Input
-draw_state_box(ax, uva_x, uva_y, 18, 14, 'UV-A', '(I_UVA)', colors['input'])
+draw_state_box(ax, uva_x, uva_y, 16, 14, 'UV-A', '(I_UVA)', colors['input'])
 
 # Growth states
-draw_state_box(ax, lai_x, lai_y, 16, 12, 'LAI', '', colors['growth'])
-draw_state_box(ax, cbuf_x, cbuf_y, 16, 12, 'C_buf', '', colors['growth'])
-draw_state_box(ax, xd_x, xd_y, 18, 12, 'X_d', '(Biomass)', colors['growth'])
+draw_state_box(ax, lai_x, lai_y, box_w, box_h, 'LAI', '', colors['growth'])
+draw_state_box(ax, cbuf_x, cbuf_y, box_w, box_h, 'C_buf', '', colors['growth'])
+draw_state_box(ax, xd_x, xd_y, box_w, box_h, 'X_d', '(Biomass)', colors['growth'])
 
 # Stress states
-draw_state_box(ax, ros_x, ros_y, 16, 12, 'ROS', '', colors['stress'])
-draw_state_box(ax, stress_x, stress_y, 16, 12, 'Stress', '', colors['stress'])
+draw_state_box(ax, ros_x, ros_y, box_w, box_h, 'ROS', '', colors['stress'])
+draw_state_box(ax, stress_x, stress_y, box_w, box_h, 'Stress', '', colors['stress'])
 
 # Anthocyanin
-draw_state_box(ax, anth_x, anth_y, 16, 12, 'Anth', '', colors['anth'])
+draw_state_box(ax, anth_x, anth_y, box_w, box_h, 'Anth', '', colors['anth'])
 
 # Damage mechanism boxes
-draw_state_box(ax, vuln_x, vuln_y, 20, 12, 'LAI', 'Vulnerability', colors['damage'])
-draw_state_box(ax, circadian_x, circadian_y, 18, 12, 'Circadian', 'Damage', colors['damage'])
-draw_state_box(ax, nonlin_x, nonlin_y, 20, 12, 'Nonlinear', 'Damage', colors['damage'])
+draw_state_box(ax, vuln_x, vuln_y, small_box_w, box_h, 'LAI', 'Vulnerability', colors['damage'])
+draw_state_box(ax, circadian_x, circadian_y, small_box_w, box_h, 'Circadian', 'Damage', colors['damage'])
+draw_state_box(ax, nonlin_x, nonlin_y, small_box_w, box_h, 'Nonlinear', 'Damage', colors['damage'])
 
 # ============================================================
 # DRAW ARROWS WITH PATHWAY LABELS (colors match arrows)
 # ============================================================
 
-# UV-A → LAI (Morphological effect) - curved up - POSITIVE
-draw_arrow(ax, (uva_x + 9, uva_y + 5), (lai_x - 8, lai_y - 3),
-           colors['arrow_positive'], linewidth=4, connectionstyle="arc3,rad=-0.3")
-add_pathway_label(ax, 20, 64, 'Morphological\nEffect\n(SLA↑, LAI↑)', color=colors['arrow_positive'])
+# UV-A → LAI (Morphological effect) - POSITIVE
+draw_arrow(ax, (uva_x + 8, uva_y + 5), (lai_x - 9, lai_y - 4),
+           colors['arrow_positive'], linewidth=2, connectionstyle="arc3,rad=-0.2")
+add_pathway_label(ax, 25, 80, 'Morphological\nEffect\n(SLA↑, LAI↑)', color=colors['arrow_positive'])
 
 # UV-A → ROS (ROS production) - NEGATIVE
-draw_arrow(ax, (uva_x + 9, uva_y - 5), (ros_x - 8, ros_y + 3),
-           colors['arrow_negative'], linewidth=4, connectionstyle="arc3,rad=0.2")
-add_pathway_label(ax, 20, 38, 'ROS Production\n(k_ros × I_UVA)', color=colors['arrow_negative'])
+draw_arrow(ax, (uva_x + 8, uva_y - 5), (ros_x - 9, ros_y + 4),
+           colors['arrow_negative'], linewidth=2, connectionstyle="arc3,rad=0.15")
+add_pathway_label(ax, 25, 52, 'ROS Production\n(k_ros × I_UVA)', color=colors['arrow_negative'])
 
 # LAI → C_buf (Light interception) - POSITIVE
-draw_arrow(ax, (lai_x + 8, lai_y), (cbuf_x - 8, cbuf_y),
-           colors['arrow_positive'], linewidth=4)
-add_pathway_label(ax, 55, 72, 'Light\nInterception', color=colors['arrow_positive'])
+draw_arrow(ax, (lai_x + 9, lai_y), (cbuf_x - 9, cbuf_y),
+           colors['arrow_positive'], linewidth=2)
+add_pathway_label(ax, 67.5, 93, 'Light\nInterception', color=colors['arrow_positive'])
 
 # C_buf → X_d (Carbon allocation) - POSITIVE
-draw_arrow(ax, (cbuf_x + 8, cbuf_y), (xd_x - 9, xd_y),
-           colors['arrow_positive'], linewidth=4)
-add_pathway_label(ax, 81, 72, 'Carbon\nAllocation', color=colors['arrow_positive'])
+draw_arrow(ax, (cbuf_x + 9, cbuf_y), (xd_x - 9, xd_y),
+           colors['arrow_positive'], linewidth=2)
+add_pathway_label(ax, 102.5, 93, 'Carbon\nAllocation', color=colors['arrow_positive'])
 
 # ROS → Stress (Damage accumulation) - NEGATIVE
-draw_arrow(ax, (ros_x + 8, ros_y), (stress_x - 8, stress_y),
-           colors['arrow_negative'], linewidth=4)
-add_pathway_label(ax, 55, 42, 'Damage\nAccumulation', color=colors['arrow_negative'])
+draw_arrow(ax, (ros_x + 9, ros_y), (stress_x - 9, stress_y),
+           colors['arrow_negative'], linewidth=2)
+add_pathway_label(ax, 67.5, 57, 'Damage\nAccumulation', color=colors['arrow_negative'])
 
 # Stress → C_buf (Growth inhibition) - curved - NEGATIVE
-draw_arrow(ax, (stress_x - 2, stress_y + 6), (cbuf_x - 2, cbuf_y - 6),
-           colors['arrow_negative'], linewidth=4, connectionstyle="arc3,rad=0.4")
-add_pathway_label(ax, 60, 50, 'Growth\nInhibition (−)', color=colors['arrow_negative'])
+draw_arrow(ax, (stress_x - 3, stress_y + 6), (cbuf_x - 3, cbuf_y - 6),
+           colors['arrow_negative'], linewidth=2, connectionstyle="arc3,rad=0.35")
+add_pathway_label(ax, 76, 68, 'Growth\nInhibition (−)', color=colors['arrow_negative'])
 
 # Stress → Anth (Stress-induced synthesis) - POSITIVE
-draw_arrow(ax, (stress_x + 8, stress_y), (anth_x - 8, anth_y),
-           colors['arrow_positive'], linewidth=4)
-add_pathway_label(ax, 81, 42, 'Stress-Induced\nSynthesis', color=colors['arrow_positive'])
+draw_arrow(ax, (stress_x + 9, stress_y), (anth_x - 9, anth_y),
+           colors['arrow_positive'], linewidth=2)
+add_pathway_label(ax, 102.5, 57, 'Stress-Induced\nSynthesis', color=colors['arrow_positive'])
 
-# Anth → X_d (Antioxidant protection) - curved - POSITIVE (protects growth)
+# Anth → X_d (Antioxidant protection) - curved - POSITIVE
 draw_arrow(ax, (anth_x, anth_y + 6), (xd_x, xd_y - 6),
-           colors['arrow_positive'], linewidth=4, connectionstyle="arc3,rad=-0.4")
-add_pathway_label(ax, 100, 50, 'Antioxidant\nProtection (−)', color=colors['arrow_positive'])
+           colors['arrow_positive'], linewidth=2, connectionstyle="arc3,rad=-0.35")
+add_pathway_label(ax, 128, 68, 'Antioxidant\nProtection (−)', color=colors['arrow_positive'])
 
 # Stress → LAI (Inhibits morphological effect) - curved - NEGATIVE
 draw_arrow(ax, (stress_x - 6, stress_y + 6), (lai_x + 6, lai_y - 6),
-           colors['arrow_negative'], linewidth=4, connectionstyle="arc3,rad=-0.3")
-add_pathway_label(ax, 48, 52, 'Inhibits Morph.\nEffect (−)', color=colors['arrow_negative'])
+           colors['arrow_negative'], linewidth=2, connectionstyle="arc3,rad=-0.25")
+add_pathway_label(ax, 60, 68, 'Inhibits Morph.\nEffect (−)', color=colors['arrow_negative'])
 
-# Stress decay - arrow from Stress going OUT and curving back (self-loop outside) - NEUTRAL
-# Draw as curved arrow going right and down then pointing back
-draw_arrow(ax, (stress_x + 8, stress_y - 3), (stress_x + 8, stress_y + 3),
-           colors['arrow_neutral'], linewidth=3, connectionstyle="arc3,rad=-1.2")
-add_pathway_label(ax, 80, 32, 'decay', color=colors['arrow_neutral'])
+# Stress decay - arrow on right side going down and curving back
+draw_arrow(ax, (stress_x + 9, stress_y - 2), (stress_x + 9, stress_y + 2),
+           colors['arrow_neutral'], linewidth=1.5, connectionstyle="arc3,rad=-1.5")
+add_pathway_label(ax, 98, 45, 'decay', color=colors['arrow_neutral'])
 
 # ============================================================
-# DAMAGE MECHANISMS CONNECTIONS
+# DAMAGE MECHANISMS CONNECTIONS - spread out to avoid overlap
 # ============================================================
 
 # LAI → LAI Vulnerability (feedback line)
-draw_arrow(ax, (lai_x - 6, lai_y - 6), (vuln_x + 6, vuln_y + 6),
-           colors['arrow_neutral'], linewidth=3, connectionstyle="arc3,rad=0.2")
-add_pathway_label(ax, 28, 40, 'v(LAI) =\nA·exp(−k·LAI)+1', color=colors['arrow_neutral'])
+draw_arrow(ax, (lai_x - 7, lai_y - 6), (vuln_x + 5, vuln_y + 6),
+           colors['arrow_neutral'], linewidth=1.5, connectionstyle="arc3,rad=0.15")
+add_pathway_label(ax, 32, 55, 'v(LAI) =\nA·exp(−k·LAI)+1', color=colors['arrow_neutral'])
 
 # LAI Vulnerability → ROS (modulates damage)
-draw_arrow(ax, (vuln_x + 6, vuln_y + 6), (ros_x - 6, ros_y - 6),
-           colors['arrow_neutral'], linewidth=3, connectionstyle="arc3,rad=-0.2")
-add_pathway_label(ax, 38, 20, 'k1·ROS·v(LAI)\n(D12 groups)', color=colors['arrow_neutral'])
+draw_arrow(ax, (vuln_x + 8, vuln_y + 6), (ros_x - 7, ros_y - 6),
+           colors['arrow_neutral'], linewidth=1.5, connectionstyle="arc3,rad=-0.15")
+add_pathway_label(ax, 45, 30, 'k1·ROS·v(LAI)\n(D12 groups)', color=colors['arrow_neutral'])
 
 # Circadian → Stress - NEGATIVE
-draw_arrow(ax, (circadian_x, circadian_y + 6), (stress_x - 4, stress_y - 6),
-           colors['arrow_negative'], linewidth=3, connectionstyle="arc3,rad=0.15")
-add_pathway_label(ax, 54, 24, 'Night UVA\n(L6D6-N)', color=colors['arrow_negative'])
+draw_arrow(ax, (circadian_x, circadian_y + 6), (stress_x - 3, stress_y - 6),
+           colors['arrow_negative'], linewidth=1.5, connectionstyle="arc3,rad=0.1")
+add_pathway_label(ax, 70, 35, 'Night UVA\n(L6D6-N)', color=colors['arrow_negative'])
 
 # Nonlinear → Stress - NEGATIVE
-draw_arrow(ax, (nonlin_x, nonlin_y + 6), (stress_x + 4, stress_y - 6),
-           colors['arrow_negative'], linewidth=3, connectionstyle="arc3,rad=-0.15")
-add_pathway_label(ax, 78, 24, 'k2·ROS·nonlin\n(H12D3)', color=colors['arrow_negative'])
+draw_arrow(ax, (nonlin_x - 5, nonlin_y + 6), (stress_x + 3, stress_y - 6),
+           colors['arrow_negative'], linewidth=1.5, connectionstyle="arc3,rad=-0.1")
+add_pathway_label(ax, 95, 30, 'k2·ROS·nonlin\n(H12D3)', color=colors['arrow_negative'])
 
-# Gompertz formula near Nonlinear Damage box
-add_pathway_label(ax, 95, 10, 'Gompertz\n(threshold=10.5h)', color=colors['arrow_neutral'])
+# Gompertz formula - positioned right of Nonlinear box
+add_pathway_label(ax, 130, 15, 'Gompertz\n(threshold=10.5h)', color=colors['arrow_neutral'])
 
 # ============================================================
 # TITLE AND LEGEND
 # ============================================================
 
 ax.set_title('Six-State ODE Model: System Dynamics Block Diagram',
-             fontsize=title_fontsize, fontweight='bold', pad=40)
+             fontsize=title_fontsize, fontweight='bold', pad=15)
 
-# Legend - positioned at bottom left, horizontal layout
-legend_x, legend_y = 3, 2
+# Legend - horizontal at very bottom
+legend_y = 2
 legend_items = [
-    (colors['growth'], 'Growth States (LAI, C_buf, X_d)'),
-    (colors['stress'], 'Stress States (ROS, Stress)'),
-    (colors['anth'], 'Anthocyanin (Anth)'),
-    (colors['damage'], 'Damage Mechanisms'),
+    (5, colors['growth'], 'Growth States (LAI, C_buf, X_d)'),
+    (45, colors['stress'], 'Stress States (ROS, Stress)'),
+    (80, colors['anth'], 'Anthocyanin (Anth)'),
+    (110, colors['damage'], 'Damage Mechanisms'),
 ]
 
-for i, (color, text) in enumerate(legend_items):
-    rect = patches.Rectangle((legend_x + i * 28, legend_y), 4, 3,
-                             facecolor=color, edgecolor='black', linewidth=2)
+for lx, color, text in legend_items:
+    rect = patches.Rectangle((lx, legend_y), 4, 3,
+                             facecolor=color, edgecolor='black', linewidth=1)
     ax.add_patch(rect)
-    ax.text(legend_x + i * 28 + 5, legend_y + 1.5, text,
-            fontsize=legend_fontsize, va='center')
+    ax.text(lx + 5, legend_y + 1.5, text, fontsize=legend_fontsize, va='center')
 
 # Save
 plt.tight_layout()
-plt.savefig('paper_figures/Fig17_system_block_diagram.png', dpi=200, bbox_inches='tight',
+plt.savefig('paper_figures/Fig17_system_block_diagram.png', dpi=300, bbox_inches='tight',
             facecolor='white', edgecolor='none')
 plt.savefig('paper_figures/Fig17_system_block_diagram.pdf', bbox_inches='tight',
             facecolor='white', edgecolor='none')
 plt.close()
 
-print("Fig 17 generated:")
-print("  - Box labels: 40pt")
-print("  - Pathway labels: 26pt (colors match arrows)")
-print("  - Title: 52pt")
-print("  - Figure size: 40x28 inches")
-print("  - Decay arrow moved outside Stress box")
+print("Fig 17 generated (paper size):")
+print("  - Figure: 14x10 inches")
+print("  - Box labels: 14pt")
+print("  - Pathway labels: 10pt (colors match arrows)")
+print("  - DPI: 300")
 print("Saved to paper_figures/Fig17_system_block_diagram.png/pdf")
