@@ -115,6 +115,7 @@ def sun_derivatives_final(t, state, p, env):
     if C_buf >= C_buf_max: h_buf = min((R_d + (RGR_max * X_d / p.c_beta)) / (p.c_alpha * A_C + 1e-9), 1.0)
 
     # 6. Calculate differential equations
+    # Original Sun et al. model equations (restored)
     net_assimilation_term = p.c_alpha * A_C * h_buf - R_d
 
     dXd_dt = p.c_beta * net_assimilation_term # Eq. 1
@@ -124,8 +125,18 @@ def sun_derivatives_final(t, state, p, env):
 
     dLAI_dt = dXd_dt * (1 - sr_val) * SLA # Eq. 9
 
-    # Boundary conditions
-    if (C_buf <= 0 and dCbuf_dt < 0) or (C_buf >= C_buf_max and dCbuf_dt > 0): dCbuf_dt = 0
+    # Boundary conditions for C_buf
+    # v11.0 fix: Enforce non-negativity of C_buf
+    # Problem: ODE solvers can overshoot even with derivative protection
+    # Solution: When C_buf is very small or negative, prevent further decrease
+    C_buf_min_threshold = 1e-5  # Small positive threshold
+    if C_buf <= C_buf_min_threshold:
+        if dCbuf_dt < 0:
+            # Strongly suppress negative derivative when C_buf is low
+            # Use exponential damping to smoothly approach zero
+            dCbuf_dt = dCbuf_dt * max(0.0, C_buf / C_buf_min_threshold) ** 2
+    if C_buf >= C_buf_max and dCbuf_dt > 0:
+        dCbuf_dt = 0
     if X_d < (0.03 / 1000 * env['plant_density']) and dXd_dt < 0: dXd_dt = 0
     if LAI < 0.01 and dLAI_dt < 0: dLAI_dt = 0 # Added protection for LAI
 

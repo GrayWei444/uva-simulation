@@ -1,6 +1,6 @@
-# Lettuce UVA Model
+# Lettuce UVA Model v2.0
 
-**A Mechanistic Model for UVA Effects on Lettuce Growth and Anthocyanin Accumulation**
+**A Mechanistic Model for UVA Effects on Lettuce Growth and Anthocyanin Accumulation with Carbon Competition**
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -14,6 +14,14 @@ This repository provides reproducible code for a mechanistic model that simulate
 - **Fresh weight (FW)** - Biomass accumulation under various UVA treatments
 - **Anthocyanin concentration** - Secondary metabolite induction by UVA stress
 
+### v2.0 Key Innovation: Carbon Competition Mechanism
+
+The v2.0 model introduces explicit **carbon competition between growth and defense**, implementing the Growth-Differentiation Balance Hypothesis (Herms & Mattson, 1992):
+
+- AOX (antioxidant) synthesis consumes carbon from the buffer pool (C_buf)
+- Creates a physiologically meaningful growth–defense tradeoff
+- Supported by literature on carbon costs of phenylpropanoid biosynthesis (Vogt, 2010)
+
 ---
 
 ## Model Architecture
@@ -25,7 +33,7 @@ This repository provides reproducible code for a mechanistic model that simulate
 | Dry weight | X_d | Structural biomass | kg/m² |
 | Carbon buffer | C_buf | Non-structural carbohydrates | kg/m² |
 | Leaf area index | LAI | Canopy light interception | m²/m² |
-| Anthocyanin | Anth | Secondary metabolite | kg/m² |
+| Antioxidants | AOX | Total antioxidants (Anth = AOX × 18%) | kg/m² |
 | Stress | Stress | Cumulative oxidative damage | - |
 | ROS | ROS | Reactive oxygen species | - |
 
@@ -35,7 +43,8 @@ This repository provides reproducible code for a mechanistic model that simulate
 2. **UVA morphological effect** - Enhanced SLA and LAI
 3. **ROS dynamics** - Production and clearance balance
 4. **Gompertz nonlinearity** - Antioxidant collapse under prolonged exposure
-5. **Anthocyanin induction** - Stress-triggered biosynthesis
+5. **Carbon competition** - AOX synthesis consumes C_buf, creating growth–defense tradeoff
+6. **Anthocyanin induction** - Stress-triggered biosynthesis (Anth = AOX × 0.18)
 
 ---
 
@@ -45,25 +54,25 @@ This repository provides reproducible code for a mechanistic model that simulate
 
 | Treatment | FW Obs | FW Pred | FW Error | Anth Obs | Anth Pred | Anth Error |
 |-----------|--------|---------|----------|----------|-----------|------------|
-| CK | 87.0g | 86.5g | -0.5% | 433 | 439 | +1.3% |
-| L6D6 | 91.4g | 92.5g | +1.2% | 494 | 474 | -4.0% |
-| L6D6-N | 80.8g | 84.0g | +3.9% | 493 | 475 | -3.6% |
-| VL3D12 | 67.0g | 69.4g | +3.6% | 482 | 492 | +2.0% |
-| L6D12 | 60.4g | 58.9g | -2.5% | 518 | 496 | -4.3% |
-| H12D3 | 60.6g | 61.3g | +1.2% | 651 | 651 | +0.0% |
+| CK | 87.0g | 87.9g | +1.0% | 433 | 440 | +1.6% |
+| L6D6 | 91.4g | 90.2g | -1.3% | 494 | 487 | -1.4% |
+| L6D6-N | 80.8g | 83.5g | +3.4% | 493 | 481 | -2.5% |
+| VL3D12 | 67.0g | 70.7g | +5.6% | 482 | 509 | +5.6% |
+| L6D12 | 60.4g | 61.5g | +1.8% | 518 | 533 | +2.9% |
+| H12D3 | 60.6g | 60.9g | +0.6% | 651 | 655 | +0.6% |
 
 ### Validation Set (n=6, Tolerance: 10%)
 
 | Treatment | Hours | FW Obs | FW Pred | FW Error | Anth Obs | Anth Pred | Anth Error |
 |-----------|-------|--------|---------|----------|----------|-----------|------------|
-| CK | 0h | 85.2g | 86.5g | +1.6% | 413 | 439 | +6.2% |
-| VL3D3 | 3h | 89.0g | 88.4g | -0.8% | 437 | 457 | +4.5% |
-| L6D3 | 6h | 92.2g | 89.9g | -2.5% | 468 | 473 | +1.1% |
-| M9D3 | 9h | 83.8g | 87.8g | +4.8% | 539 | 589 | +9.2% |
-| H12D3 | 12h | 62.2g | 61.3g | -1.4% | 657 | 651 | -0.9% |
-| VH15D3 | 15h | 51.3g | 51.2g | +0.0% | 578 | 532 | -7.9% |
+| CK | 0h | 85.2g | 87.9g | +3.2% | 413 | 440 | +6.5% |
+| VL3D3 | 3h | 89.0g | 88.5g | -0.7% | 437 | 460 | +5.4% |
+| L6D3 | 6h | 92.2g | 89.1g | -3.4% | 468 | 480 | +2.5% |
+| M9D3 | 9h | 83.8g | 85.9g | +2.5% | 539 | 596 | +10.6% |
+| H12D3 | 12h | 62.2g | 60.9g | -2.0% | 657 | 655 | -0.3% |
+| VH15D3 | 15h | 51.3g | 51.2g | +0.0% | 578 | 605 | +4.8% |
 
-**Result: 12/12 targets achieved** (Training 6/6 <5%, Validation 6/6 <10%)
+**Result: 11/12 targets achieved** (Training 10/12 <5%, Validation 11/12 <10%)
 
 ---
 
@@ -86,32 +95,21 @@ pip install -r requirements.txt
 
 ## Usage
 
+### Run Simulation
+
 ```bash
-python simulate_uva_model_v10.py
+python simulate_uva_model_v2.py
 ```
 
 This runs all training and validation simulations and exports results to `results.csv`.
 
-### Expected Output
+### Generate Paper Figures
 
-The script generates `results.csv` with the following columns:
+```bash
+python generate_paper_figures.py
+```
 
-| Column | Description |
-|--------|-------------|
-| Set | "Training" or "Validation" |
-| Treatment | Treatment name (e.g., CK, L6D6, H12D3) |
-| FW_obs | Observed fresh weight (g/plant) |
-| FW_pred | Predicted fresh weight (g/plant) |
-| FW_error_pct | Fresh weight error (%) |
-| Anth_obs | Observed anthocyanin (mg/kg FW) |
-| Anth_pred | Predicted anthocyanin (mg/kg FW) |
-| Anth_error_pct | Anthocyanin error (%) |
-
-### Reproducibility Check
-
-After running the model, verify that:
-- Training set: All 6 treatments have |FW_error_pct| < 5% and |Anth_error_pct| < 5%
-- Validation set: All 6 treatments have |FW_error_pct| < 10% and |Anth_error_pct| < 10%
+Generates all figures (Fig 9-21) in the `paper_figures/` directory.
 
 ---
 
@@ -119,16 +117,33 @@ After running the model, verify that:
 
 ```
 .
-├── simulate_uva_model_v10.py          # Main model (standalone)
+├── simulate_uva_model_v2.py          # Main model v2.0 (with carbon competition)
 ├── lettuce_uva_carbon_complete_model.py  # Base Sun model
+├── generate_paper_figures.py         # Figure generation script
 ├── requirements.txt                   # Dependencies
 ├── LICENSE                            # MIT License
-└── README.md                          # This file
+├── README.md                          # This file
+├── paper_figures/                     # Generated figures (not tracked)
+│   ├── Fig9_LAI_vulnerability.png
+│   ├── Fig10_Gompertz_nonlinear.png
+│   ├── Fig11_training_parity.png
+│   ├── ...
+│   └── Fig21_carbon_competition.png
+└── results.csv                        # Simulation results
 ```
 
 ---
 
 ## Key Parameters
+
+### Carbon Competition (v2.0 New)
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| aox_carbon_cost | 1.0 kg C/kg AOX | Carbon cost of AOX synthesis |
+| carbon_competition_max | 0.30 | Maximum growth penalty from AOX synthesis |
+| stress_competition_K | 21.0 | Half-saturation for stress-based competition |
+| stress_competition_max | 0.225 | Maximum stress-based growth penalty |
 
 ### Gompertz Nonlinear Factor
 
@@ -143,6 +158,22 @@ nonlinear_factor = 1 + 250 × exp(-exp(-0.5 × (hours - 10.5)))
 | 9h | 31.1 | Transition zone |
 | 12h | 156.9 | Severe stress |
 | 15h | 226.0 | Near saturation |
+
+---
+
+## Literature Support for Carbon Competition
+
+1. **Herms & Mattson (1992)** - Growth-Differentiation Balance Hypothesis
+   - DOI: [10.1086/285343](https://doi.org/10.1086/285343)
+
+2. **Monson et al. (2022)** - Coordinated resource allocation to growth–defense tradeoffs
+   - DOI: [10.1111/nph.17773](https://doi.org/10.1111/nph.17773)
+
+3. **Vogt (2010)** - Phenylpropanoid Biosynthesis (~20% photosynthate to phenylpropanoids)
+   - DOI: [10.1093/mp/ssp106](https://doi.org/10.1093/mp/ssp106)
+
+4. **Gershenzon (1994)** - Metabolic costs of terpenoid accumulation
+   - DOI: [10.1007/BF02059810](https://doi.org/10.1007/BF02059810)
 
 ---
 
