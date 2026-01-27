@@ -156,9 +156,15 @@ def generate_fig10_gompertz():
 # ==============================================================================
 # Simulation Helper Functions
 # ==============================================================================
-def run_simulation(treatment_name, env):
-    """Run simulation for a treatment and return results."""
-    p = UVAParams()
+def run_simulation(treatment_name, env, params=None):
+    """Run simulation for a treatment and return results.
+
+    Args:
+        treatment_name: Name of treatment for logging
+        env: Environment dictionary
+        params: Optional UVAParams object. If None, uses default parameters.
+    """
+    p = params if params is not None else UVAParams()
 
     fw_init_g = SIMULATION['initial_fw_g']
     dw_init_g = fw_init_g * p.dw_fw_ratio_base
@@ -1021,40 +1027,30 @@ def generate_fig19_sensitivity():
         anth_changes = []
         stress_changes = []
 
+        print(f"    Analyzing parameter: {param_name}")
+
         for mult in multipliers:
-            # Create modified params
+            # Create modified params with actual v2 model simulation
             p = UVAParams()
             setattr(p, param_name, base_val * mult)
 
-            # Run simulation with modified params
-            # Note: For simplicity, we'll just show relative changes
-            # In a full implementation, we'd rerun simulations
+            # Run actual simulation with modified params
+            result = run_simulation(f'{param_name}_{mult}', ref_env, params=p)
 
-            # Approximate sensitivity based on parameter type
-            if 'vulnerability' in param_name or 'stress' in param_name:
-                fw_change = -(mult - 1.0) * 0.3  # Higher vulnerability -> lower FW
-                stress_change = (mult - 1.0) * 0.5
-                anth_change = (mult - 1.0) * 0.2
-            elif 'aox' in param_name or 'anth' in param_name:
-                fw_change = 0.0
-                stress_change = 0.0
-                anth_change = (mult - 1.0) * 0.4 if 'max' in param_name or 'rate' in param_name else -(mult - 1.0) * 0.4
-            elif 'carbon' in param_name:
-                fw_change = -(mult - 1.0) * 0.15
-                stress_change = 0.0
-                anth_change = (mult - 1.0) * 0.1
-            elif 'gompertz' in param_name:
-                fw_change = (mult - 1.0) * 0.2  # Higher threshold -> less damage -> higher FW
-                stress_change = -(mult - 1.0) * 0.3
-                anth_change = -(mult - 1.0) * 0.15
+            if result:
+                # Calculate percentage change from reference
+                fw_change = (result['FW'] - ref_FW) / ref_FW * 100
+                anth_change = (result['Anth'] - ref_Anth) / ref_Anth * 100
+                stress_change = (result['Stress'] - ref_Stress) / (ref_Stress + 1e-9) * 100
             else:
-                fw_change = (mult - 1.0) * 0.1
-                stress_change = -(mult - 1.0) * 0.2
-                anth_change = -(mult - 1.0) * 0.1
+                # If simulation fails, use 0 (no change)
+                fw_change = 0
+                anth_change = 0
+                stress_change = 0
 
-            fw_changes.append(fw_change * 100)
-            anth_changes.append(anth_change * 100)
-            stress_changes.append(stress_change * 100)
+            fw_changes.append(fw_change)
+            anth_changes.append(anth_change)
+            stress_changes.append(stress_change)
 
         x = [(m - 1.0) * 100 for m in multipliers]
         ax.plot(x, fw_changes, 'b-o', linewidth=2, markersize=6, label='FW')
@@ -1069,7 +1065,6 @@ def generate_fig19_sensitivity():
         ax.set_title(param_name.replace('_', ' ').title(), fontsize=11)
         ax.legend(loc='best', fontsize=8)
         ax.grid(True, alpha=0.3)
-        ax.set_xlim(-55, 55)
 
     plt.suptitle('Fig 19: Parameter Sensitivity Analysis (v2.0)', fontsize=14, fontweight='bold', y=1.02)
     plt.tight_layout()
