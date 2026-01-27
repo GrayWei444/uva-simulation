@@ -117,19 +117,21 @@ Generates all figures (Fig 9-21) in the `paper_figures/` directory.
 
 ```
 .
-├── simulate_uva_model_v2.py          # Main model v2.0 (with carbon competition)
-├── lettuce_uva_carbon_complete_model.py  # Base Sun model
-├── generate_paper_figures.py         # Figure generation script
+├── lettuce_uva_model.py              # Main model code (carbon competition mechanism)
+├── lettuce_uva_carbon_complete_model.py  # Base Sun model (dependency)
+├── generate_paper_figures.py         # Figure generation script (v6)
+├── parameters.md                      # Complete parameter documentation
+├── parameters_v2.md                   # Carbon competition model parameters (v2.0)
 ├── requirements.txt                   # Dependencies
 ├── LICENSE                            # MIT License
 ├── README.md                          # This file
 ├── paper_figures/                     # Generated figures (not tracked)
-│   ├── Fig9_LAI_vulnerability.png
-│   ├── Fig10_Gompertz_nonlinear.png
-│   ├── Fig11_training_parity.png
+│   ├── Fig9_validation_FW.png
+│   ├── Fig10_validation_Anth.png
+│   ├── Fig11_validation_parity.png
 │   ├── ...
-│   └── Fig21_carbon_competition.png
-└── results.csv                        # Simulation results
+│   └── FigS3_carbon_competition.png
+└── Supplementary Materials.md         # Supplementary tables and formulas
 ```
 
 ---
