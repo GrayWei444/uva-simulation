@@ -1,23 +1,23 @@
 """
 ================================================================================
-UVA Lettuce Model v2.0 - Figure Generation Script
+UVA Lettuce Model v6.0 - Figure Generation Script
 ================================================================================
-Generates all figures for the v2 documentation based on paper figure numbering.
+Generates all figures for the v6 paper based on v5 figure numbering convention.
 
-Figure Numbers (following paper):
-- Fig 9: LAI vulnerability function
-- Fig 10: Gompertz nonlinear damage factor
-- Fig 11: Training parity plots (FW & Anth)
-- Fig 12: Stress time series
-- Fig 13: Validation FW response
-- Fig 14: Validation Anthocyanin response
-- Fig 15: Validation parity plots
-- Fig 16: Hill inhibition functions
-- Fig 17: System dynamics block diagram (carbon competition)
-- Fig 18: Hormesis response surface
-- Fig 19: Sensitivity analysis plots
-- Fig 20: Optimization heatmaps
-- Fig 21: Carbon competition mechanism (v2.0 NEW)
+Figure Numbers (v6 following v5 structure):
+- Fig 9: Validation FW response (previously Fig 13)
+- Fig 10: Validation Anthocyanin response (previously Fig 14)
+- Fig 11: Validation parity plots (previously Fig 15)
+- Fig 12: LAI vulnerability function (previously Fig 9)
+- Fig 13: Gompertz nonlinear damage factor (previously Fig 10)
+- Fig 14: Training parity plots (FW & Anth) (previously Fig 11)
+- Fig 15: Stress time series (previously Fig 12)
+- Fig 16: Hill inhibition functions (same)
+- Fig 17: Sensitivity analysis plots (previously Fig 19)
+- Fig 18: Optimization heatmaps (previously Fig 20)
+- Fig S1: System dynamics block diagram (previously Fig 17)
+- Fig S2: Hormesis response surface (previously Fig 18)
+- Fig S3: Carbon competition mechanism (previously Fig 21)
 
 ================================================================================
 """
@@ -73,11 +73,11 @@ SIMULATION = {
 
 
 # ==============================================================================
-# Fig 9: LAI Vulnerability Function
+# Fig 12: LAI Vulnerability Function
 # ==============================================================================
-def generate_fig9_lai_vulnerability():
+def generate_fig12_lai_vulnerability():
     """Generate LAI vulnerability function plot."""
-    print("Generating Fig 9: LAI vulnerability...")
+    print("Generating Fig 12: LAI vulnerability...")
 
     p = UVAParams()
     LAI = np.linspace(0, 12, 200)
@@ -97,24 +97,24 @@ def generate_fig9_lai_vulnerability():
 
     ax.set_xlabel('LAI (m²/m²)')
     ax.set_ylabel('Vulnerability Factor')
-    ax.set_title('Fig 9: LAI-Dependent Stress Vulnerability (v2.0)')
+    ax.set_title('Fig 12: LAI-Dependent Stress Vulnerability (v6)')
     ax.set_xlim(0, 12)
     ax.legend(loc='upper right')
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig9_LAI_vulnerability.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig9_LAI_vulnerability.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig12_LAI_vulnerability.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig12_LAI_vulnerability.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig9_LAI_vulnerability.png/pdf")
+    print("  Saved Fig12_LAI_vulnerability.png/pdf")
 
 
 # ==============================================================================
-# Fig 10: Gompertz Nonlinear Damage Factor
+# Fig 13: Gompertz Nonlinear Damage Factor
 # ==============================================================================
-def generate_fig10_gompertz():
+def generate_fig13_gompertz():
     """Generate Gompertz nonlinear damage factor plot."""
-    print("Generating Fig 10: Gompertz nonlinear damage...")
+    print("Generating Fig 13: Gompertz nonlinear damage...")
 
     p = UVAParams()
     hours = np.linspace(0, 16, 200)
@@ -141,16 +141,16 @@ def generate_fig10_gompertz():
 
     ax.set_xlabel('UVA Exposure Hours per Day')
     ax.set_ylabel('Nonlinear Damage Factor')
-    ax.set_title('Fig 10: Gompertz Nonlinear Damage Function (v2.0)')
+    ax.set_title('Fig 13: Gompertz Nonlinear Damage Function (v6)')
     ax.set_xlim(0, 16)
     ax.set_ylim(0, 280)
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig10_Gompertz_nonlinear.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig10_Gompertz_nonlinear.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig13_Gompertz_nonlinear.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig13_Gompertz_nonlinear.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig10_Gompertz_nonlinear.png/pdf")
+    print("  Saved Fig13_Gompertz_nonlinear.png/pdf")
 
 
 # ==============================================================================
@@ -235,11 +235,11 @@ def run_simulation(treatment_name, env, params=None):
 
 
 # ==============================================================================
-# Fig 11: Training Parity Plots
+# Fig 14: Training Parity Plots
 # ==============================================================================
-def generate_fig11_training_parity():
+def generate_fig14_training_parity():
     """Generate training parity plots for FW and Anthocyanin."""
-    print("Generating Fig 11: Training parity plots...")
+    print("Generating Fig 14: Training parity plots...")
 
     TARGETS = {
         'CK':      {'FW': 87.0, 'Anth': 433, 'env': {'uva_on': False}},
@@ -313,20 +313,20 @@ def generate_fig11_training_parity():
     ax.grid(True, alpha=0.3)
     ax.set_aspect('equal')
 
-    plt.suptitle('Fig 11: Training Dataset Parity (v2.0)', fontsize=16, y=1.02)
+    plt.suptitle('Fig 14: Training Dataset Parity (v6)', fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig11_training_parity.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig11_training_parity.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig14_training_parity.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig14_training_parity.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig11_training_parity.png/pdf")
+    print("  Saved Fig14_training_parity.png/pdf")
 
 
 # ==============================================================================
-# Fig 12: Stress Time Series
+# Fig 15: Stress Time Series
 # ==============================================================================
-def generate_fig12_stress_timeseries():
+def generate_fig15_stress_timeseries():
     """Generate stress time series for all treatments."""
-    print("Generating Fig 12: Stress time series...")
+    print("Generating Fig 15: Stress time series...")
 
     TREATMENTS = {
         'CK':      {'uva_on': False},
@@ -360,24 +360,24 @@ def generate_fig12_stress_timeseries():
 
     ax.set_xlabel('Days from Sowing')
     ax.set_ylabel('Cumulative Stress Index')
-    ax.set_title('Fig 12: Stress Accumulation Time Series (v2.0)')
+    ax.set_title('Fig 15: Stress Accumulation Time Series (v6)')
     ax.set_xlim(14, 36)
     ax.legend(loc='upper left', ncol=2)
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig12_stress_timeseries.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig12_stress_timeseries.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig15_stress_timeseries.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig15_stress_timeseries.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig12_stress_timeseries.png/pdf")
+    print("  Saved Fig15_stress_timeseries.png/pdf")
 
 
 # ==============================================================================
-# Fig 13 & 14: Validation Response Curves
+# Fig 9 & 10: Validation Response Curves
 # ==============================================================================
-def generate_fig13_14_validation_response():
+def generate_fig9_10_validation_response():
     """Generate validation FW and Anthocyanin response curves."""
-    print("Generating Fig 13 & 14: Validation response curves...")
+    print("Generating Fig 9 & 10: Validation response curves...")
 
     validation_targets = {
         'CK':      {'FW': 85.14, 'Anth': 413, 'hours': 0},
@@ -416,12 +416,12 @@ def generate_fig13_14_validation_response():
     results.sort(key=lambda x: x['hours'])
     hours = [r['hours'] for r in results]
 
-    # Fig 13: FW Response
+    # Fig 9: FW Response
     fig, ax = plt.subplots(figsize=(10, 7))
     ax.plot(hours, [r['obs_FW'] for r in results], 'ko-', markersize=10,
             linewidth=2, label='Observed')
     ax.plot(hours, [r['sim_FW'] for r in results], 'rs--', markersize=10,
-            linewidth=2, label='Simulated (v2.0)')
+            linewidth=2, label='Simulated (v6)')
 
     ax.fill_between(hours,
                    [r['obs_FW']*0.95 for r in results],
@@ -430,23 +430,23 @@ def generate_fig13_14_validation_response():
 
     ax.set_xlabel('UVA Exposure Hours per Day')
     ax.set_ylabel('Fresh Weight (g)')
-    ax.set_title('Fig 13: Validation - FW Response to UVA Duration (v2.0)')
+    ax.set_title('Fig 9: Validation - FW Response to UVA Duration (v6)')
     ax.set_xlim(-0.5, 16)
     ax.legend()
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig13_validation_FW.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig13_validation_FW.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig9_validation_FW.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig9_validation_FW.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig13_validation_FW.png/pdf")
+    print("  Saved Fig9_validation_FW.png/pdf")
 
-    # Fig 14: Anthocyanin Response
+    # Fig 10: Anthocyanin Response
     fig, ax = plt.subplots(figsize=(10, 7))
     ax.plot(hours, [r['obs_Anth'] for r in results], 'ko-', markersize=10,
             linewidth=2, label='Observed')
     ax.plot(hours, [r['sim_Anth'] for r in results], 'rs--', markersize=10,
-            linewidth=2, label='Simulated (v2.0)')
+            linewidth=2, label='Simulated (v6)')
 
     ax.fill_between(hours,
                    [r['obs_Anth']*0.95 for r in results],
@@ -455,24 +455,24 @@ def generate_fig13_14_validation_response():
 
     ax.set_xlabel('UVA Exposure Hours per Day')
     ax.set_ylabel('Anthocyanin (μg/g FW)')
-    ax.set_title('Fig 14: Validation - Anthocyanin Response to UVA Duration (v2.0)')
+    ax.set_title('Fig 10: Validation - Anthocyanin Response to UVA Duration (v6)')
     ax.set_xlim(-0.5, 16)
     ax.legend()
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig14_validation_Anth.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig14_validation_Anth.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig10_validation_Anth.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig10_validation_Anth.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig14_validation_Anth.png/pdf")
+    print("  Saved Fig10_validation_Anth.png/pdf")
 
 
 # ==============================================================================
-# Fig 15: Validation Parity Plots
+# Fig 11: Validation Parity Plots
 # ==============================================================================
-def generate_fig15_validation_parity():
+def generate_fig11_validation_parity():
     """Generate validation parity plots."""
-    print("Generating Fig 15: Validation parity plots...")
+    print("Generating Fig 11: Validation parity plots...")
 
     validation_targets = {
         'CK':      {'FW': 85.14, 'Anth': 413, 'hours': 0},
@@ -555,12 +555,12 @@ def generate_fig15_validation_parity():
     ax.grid(True, alpha=0.3)
     ax.set_aspect('equal')
 
-    plt.suptitle('Fig 15: Validation Dataset Parity (v2.0)', fontsize=16, y=1.02)
+    plt.suptitle('Fig 11: Validation Dataset Parity (v6)', fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig15_validation_parity.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig15_validation_parity.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig11_validation_parity.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig11_validation_parity.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig15_validation_parity.png/pdf")
+    print("  Saved Fig11_validation_parity.png/pdf")
 
 
 # ==============================================================================
@@ -647,7 +647,7 @@ def generate_fig16_hill_inhibition():
     ax.legend()
     ax.grid(True, alpha=0.3)
 
-    plt.suptitle('Fig 16: Hill-Type Inhibition Functions (v2.0)', fontsize=16, y=1.02)
+    plt.suptitle('Fig 16: Hill-Type Inhibition Functions (v6)', fontsize=16, y=1.02)
     plt.tight_layout()
     plt.savefig(os.path.join(OUTPUT_DIR, 'Fig16_Hill_inhibition.png'), dpi=300, bbox_inches='tight')
     plt.savefig(os.path.join(OUTPUT_DIR, 'Fig16_Hill_inhibition.pdf'), bbox_inches='tight')
@@ -656,11 +656,11 @@ def generate_fig16_hill_inhibition():
 
 
 # ==============================================================================
-# Fig 21: Carbon Competition Mechanism (v2.0 NEW)
+# Fig S3: Carbon Competition Mechanism (Supplementary)
 # ==============================================================================
-def generate_fig21_carbon_competition():
+def generate_figS3_carbon_competition():
     """Generate carbon competition mechanism visualization."""
-    print("Generating Fig 21: Carbon competition mechanism...")
+    print("Generating Fig S3: Carbon competition mechanism...")
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 12))
 
@@ -783,20 +783,20 @@ def generate_fig21_carbon_competition():
     ax.legend()
     ax.grid(True, alpha=0.3)
 
-    plt.suptitle('Fig 21: Carbon Competition Mechanism (v2.0)', fontsize=16, y=1.02)
+    plt.suptitle('Fig S3: Carbon Competition Mechanism (v6)', fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig21_carbon_competition.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig21_carbon_competition.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'FigS3_carbon_competition.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'FigS3_carbon_competition.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig21_carbon_competition.png/pdf")
+    print("  Saved FigS3_carbon_competition.png/pdf")
 
 
 # ==============================================================================
-# Fig 17: System Dynamics Block Diagram
+# Fig S1: System Dynamics Block Diagram (Supplementary)
 # ==============================================================================
-def generate_fig17_block_diagram():
+def generate_figS1_block_diagram():
     """Generate system dynamics block diagram with carbon competition."""
-    print("Generating Fig 17: System dynamics block diagram...")
+    print("Generating Fig S1: System dynamics block diagram...")
 
     fig, ax = plt.subplots(figsize=(14, 10))
     ax.set_xlim(0, 14)
@@ -902,7 +902,7 @@ def generate_fig17_block_diagram():
                 arrowprops=dict(arrowstyle='->', lw=1.5))
 
     # Title and legend
-    ax.text(7, 9.5, 'Fig 17: System Dynamics Block Diagram (v2.0 with Carbon Competition)',
+    ax.text(7, 9.5, 'Fig S1: System Dynamics Block Diagram (v6 with Carbon Competition)',
             fontsize=14, fontweight='bold', ha='center')
 
     # Legend
@@ -920,18 +920,18 @@ def generate_fig17_block_diagram():
     ax.text(6.2, legend_y + 0.15, 'Carbon Competition', fontsize=9, va='center', color='red')
 
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig17_block_diagram.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig17_block_diagram.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'FigS1_block_diagram.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'FigS1_block_diagram.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig17_block_diagram.png/pdf")
+    print("  Saved FigS1_block_diagram.png/pdf")
 
 
 # ==============================================================================
-# Fig 18: Hormesis Response Surface
+# Fig S2: Hormesis Response Surface (Supplementary)
 # ==============================================================================
-def generate_fig18_hormesis_surface():
+def generate_figS2_hormesis_surface():
     """Generate hormesis response surface for anthocyanin."""
-    print("Generating Fig 18: Hormesis response surface...")
+    print("Generating Fig S2: Hormesis response surface...")
 
     p = UVAParams()
 
@@ -961,7 +961,7 @@ def generate_fig18_hormesis_surface():
 
     ax.set_xlabel('Daily UV-A Hours (h/day)', fontsize=12)
     ax.set_ylabel('Treatment Duration (days)', fontsize=12)
-    ax.set_title('Fig 18: Anthocyanin Concentration Response Surface (v2.0)', fontsize=14, fontweight='bold')
+    ax.set_title('Fig S2: Anthocyanin Concentration Response Surface (v6)', fontsize=14, fontweight='bold')
     cbar = plt.colorbar(im, ax=ax)
     cbar.set_label('Anthocyanin (ppm)', fontsize=11)
 
@@ -977,18 +977,18 @@ def generate_fig18_hormesis_surface():
                 arrowprops=dict(arrowstyle='->', color='black', lw=1.5))
 
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig18_hormesis_surface.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig18_hormesis_surface.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'FigS2_hormesis_surface.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'FigS2_hormesis_surface.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig18_hormesis_surface.png/pdf")
+    print("  Saved FigS2_hormesis_surface.png/pdf")
 
 
 # ==============================================================================
-# Fig 19: Sensitivity Analysis
+# Fig 17: Sensitivity Analysis
 # ==============================================================================
-def generate_fig19_sensitivity():
+def generate_fig17_sensitivity():
     """Generate sensitivity analysis plots."""
-    print("Generating Fig 19: Sensitivity analysis...")
+    print("Generating Fig 17: Sensitivity analysis...")
 
     # Define parameters to analyze with their base values and ranges
     params_to_analyze = [
@@ -1066,20 +1066,20 @@ def generate_fig19_sensitivity():
         ax.legend(loc='best', fontsize=8)
         ax.grid(True, alpha=0.3)
 
-    plt.suptitle('Fig 19: Parameter Sensitivity Analysis (v2.0)', fontsize=14, fontweight='bold', y=1.02)
+    plt.suptitle('Fig 17: Parameter Sensitivity Analysis (v6)', fontsize=14, fontweight='bold', y=1.02)
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig19_sensitivity.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig19_sensitivity.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig17_sensitivity.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig17_sensitivity.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig19_sensitivity.png/pdf")
+    print("  Saved Fig17_sensitivity.png/pdf")
 
 
 # ==============================================================================
-# Fig 20: Optimization Heatmaps
+# Fig 18: Optimization Heatmaps
 # ==============================================================================
-def generate_fig20_optimization():
+def generate_fig18_optimization():
     """Generate optimization heatmaps for FW and Anthocyanin."""
-    print("Generating Fig 20: Optimization heatmaps...")
+    print("Generating Fig 18: Optimization heatmaps...")
 
     CK_FW = 87.0
     CK_ANTH = 433
@@ -1160,12 +1160,12 @@ def generate_fig20_optimization():
                  bbox=dict(boxstyle='round', facecolor='white', alpha=0.9),
                  arrowprops=dict(arrowstyle='->', color='blue', lw=1.5))
 
-    plt.suptitle('Fig 20: Optimization Heatmaps (v2.0)', fontsize=14, fontweight='bold', y=1.02)
+    plt.suptitle('Fig 18: Optimization Heatmaps (v6)', fontsize=14, fontweight='bold', y=1.02)
     plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig20_optimization.png'), dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig20_optimization.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig18_optimization.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, 'Fig18_optimization.pdf'), bbox_inches='tight')
     plt.close()
-    print("  Saved Fig20_optimization.png/pdf")
+    print("  Saved Fig18_optimization.png/pdf")
 
 
 # ==============================================================================
@@ -1173,23 +1173,26 @@ def generate_fig20_optimization():
 # ==============================================================================
 def main():
     print("=" * 60)
-    print("UVA Lettuce Model v2.0 - Figure Generation")
+    print("UVA Lettuce Model v6.0 - Figure Generation")
     print("=" * 60)
     print()
 
-    # Generate all figures (matching paper numbering)
-    generate_fig9_lai_vulnerability()
-    generate_fig10_gompertz()
-    generate_fig11_training_parity()
-    generate_fig12_stress_timeseries()
-    generate_fig13_14_validation_response()
-    generate_fig15_validation_parity()
-    generate_fig16_hill_inhibition()
-    generate_fig17_block_diagram()
-    generate_fig18_hormesis_surface()
-    generate_fig19_sensitivity()
-    generate_fig20_optimization()
-    generate_fig21_carbon_competition()
+    # Generate all figures (matching v6/v5 paper numbering)
+    # Main figures (9-18)
+    generate_fig9_10_validation_response()  # Fig 9: Validation FW, Fig 10: Validation Anth
+    generate_fig11_validation_parity()      # Fig 11: Validation parity
+    generate_fig12_lai_vulnerability()      # Fig 12: LAI vulnerability
+    generate_fig13_gompertz()               # Fig 13: Gompertz nonlinear
+    generate_fig14_training_parity()        # Fig 14: Training parity
+    generate_fig15_stress_timeseries()      # Fig 15: Stress time series
+    generate_fig16_hill_inhibition()        # Fig 16: Hill inhibition
+    generate_fig17_sensitivity()            # Fig 17: Sensitivity analysis
+    generate_fig18_optimization()           # Fig 18: Optimization heatmaps
+
+    # Supplementary figures (S1-S3)
+    generate_figS1_block_diagram()          # Fig S1: Block diagram
+    generate_figS2_hormesis_surface()       # Fig S2: Hormesis surface
+    generate_figS3_carbon_competition()     # Fig S3: Carbon competition
 
     print()
     print("=" * 60)

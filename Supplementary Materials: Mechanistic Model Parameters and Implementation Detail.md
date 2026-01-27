@@ -81,7 +81,7 @@ The simulation starts at 14 DAS (transplanting) and runs to 35 DAS. All rates ar
 Initial conditions:
 X_d(0) = FW_init x LDMC_base x plant_density / 1000 = 0.018 kg m^-2
 C_buf(0) = 0.1 x X_d(0) = 0.0018 kg m^-2
-LAI(0) = 0.40 m^2 m^-2
+LAI(0) = 2.0 m^2 m^-2 (calculated as FW_init × LDMC_base / 0.01 × 0.04)
 AOX(0) = 1.0x10^-5 kg m^-2 (equivalent to ~5 ppm anthocyanin)
 Stress(0) = 0
 ROS(0) = 0
@@ -110,6 +110,14 @@ max_consumption = C_buf x max_cbuf_consumption = C_buf x 0.10
 aox_carbon_consumption = min(aox_synthesis_rate x aox_carbon_cost, max_consumption)
 dC_buf/dt = dC_buf/dt - aox_carbon_consumption
 
+Note: aox_synthesis_rate includes all components (baseline + UV-induced + stress-induced), reflecting that all AOX biosynthesis requires carbon substrates from the phenylpropanoid pathway.
+
+Formula: AOX synthesis penalty (feedback inhibition)
+aox_synthesis_penalty = 1.0 - 0.20 x carbon_competition_effect
+S_AOX = S_AOX_base x aox_synthesis_penalty
+
+This feedback reflects reduced synthetic capacity when carbon is limiting, consistent with metabolic regulation of secondary metabolism under resource constraints.
+
 Supplementary Table S4. Literature support for carbon competition
 Mechanism	Reference	DOI
 Growth-Differentiation Balance Hypothesis	Herms & Mattson (1992)	10.1086/285343
@@ -129,6 +137,34 @@ Daily Hours	Factor
 15h	226.7
 
 Note: The nonlinear damage factor is calculated using hours_today (current exposure progress within the day) for progressive damage accumulation. The table shows FINAL daily values for reference.
+
+Supplementary Table S6. Stress dynamics implementation detail
+The stress accumulation in Equation (7) is implemented as follows:
+
+vuln_damage = stress_damage_coeff × ROS × vulnerability(LAI)
+nonlin_damage = k_nonlinear_stress × ROS × Nonlinear_Factor
+base_damage = vuln_damage + nonlin_damage
+protected_damage = base_damage × (1 − aox_protection)
+total_damage = protected_damage + circadian_damage
+dStress/dt = total_damage − k_stress_decay × Stress
+
+where:
+- vuln_damage: LAI-dependent vulnerability effect
+- nonlin_damage: Gompertz-modulated nonlinear damage amplification
+- base_damage: combined damage before protection
+- protected_damage: base damage reduced by AOX protection (protection applies to both vulnerability and nonlinear components)
+- circadian_damage: additional damage for night irradiation (not protected by AOX)
+
+This structure applies AOX protection uniformly to the combined damage from both vulnerability and nonlinear amplification, while circadian damage remains unprotected to reflect that circadian disruption operates through distinct physiological pathways.
+
+Supplementary Table S7. Sun model parameters (handled internally)
+The main text equations include parameters K_carbon (Equation 4) and k_senescence (Equation 5) for conceptual clarity. These parameters are handled internally by the base Sun model framework (lettuce_uva_carbon_complete_model.py) rather than being explicitly calibrated in the UV-A extension layer.
+
+Parameter	Description	Handling
+K_carbon	Half-saturation constant for carbon-limited growth	Embedded in Sun model's photosynthesis and respiration calculations; the carbon buffer dynamics implicitly regulate growth through the C_buf state variable
+k_senescence	LAI senescence/turnover rate	Incorporated in Sun model's leaf area dynamics; accounts for natural leaf turnover and age-dependent senescence
+
+The conceptual equations in the main text (Equations 4-5) present a simplified view for clarity. The actual implementation inherits the full Sun model framework, which provides mechanistically-grounded carbon and LAI dynamics calibrated for lettuce growth under controlled environment conditions.
 
 Code availability
 The full implementation, configuration files and validation scripts are provided in the public GitHub repository (URL to be inserted by the authors). The main model file is lettuce_uva_model.py. We recommend citing a tagged release and archiving it via Zenodo to obtain a DOI for peer-review reproducibility.
