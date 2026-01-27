@@ -109,7 +109,7 @@ This runs all training and validation simulations and exports results to `result
 python generate_paper_figures.py
 ```
 
-Generates all figures (Fig 9-21) in the `paper_figures/` directory.
+Generates all model figures (Fig 9-18, S1-S3) in the `paper_figures/` directory.
 
 ---
 
